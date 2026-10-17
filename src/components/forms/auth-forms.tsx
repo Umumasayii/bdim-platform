@@ -51,6 +51,12 @@ export function SignInForm() {
       })}
     >
       {params.get("reset") === "1" ? <Notice tone="success">Your password was updated. Please sign in.</Notice> : null}
+      {params.get("error") === "link" ? (
+        <Notice tone="info" title="Please sign in to continue">
+          That link couldn&apos;t sign you in automatically — usually because it was opened in a different browser from the one you signed
+          up in. If it was a confirmation email, your email is now confirmed: sign in below. If the link has expired, request a new one.
+        </Notice>
+      ) : null}
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Field label="Email" htmlFor="si-email" error={formState.errors.email?.message}>
         <Input id="si-email" type="email" autoComplete="email" {...register("email")} aria-invalid={Boolean(formState.errors.email)} />

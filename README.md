@@ -5,7 +5,7 @@ The website and learning platform for **BDIM Ltd (Big Data IQ Mind Ltd)**, publi
 
 It includes a course catalogue, learning paths, a free practice zone, a question bank, a browser-based coding lab (Python, SQL, R and Excel formulas), a learning management system, bookings for live sessions, consulting inquiries, and a protected admin area.
 
-> **Status:** The application works end to end in **demo mode**, which needs no external services. **Production mode** (Supabase accounts and database) is fully implemented, but has not yet been tested against a live Supabase project. See [Implemented vs. awaiting configuration](#implemented-vs-awaiting-configuration).
+> **Status:** The application works end to end in **demo mode** (no external services) and in **Supabase mode**. Supabase mode has been tested against a live project: sign-in, enrollment, lesson access rules, server-graded quizzes, certificate issuing and verification, discussions, bookings with database-level conflict prevention, inquiries, and the admin and learner-management pages. See [Implemented vs. awaiting configuration](#implemented-vs-awaiting-configuration).
 
 ---
 
@@ -48,13 +48,14 @@ The local admin only works when Supabase is **not** configured. It sets a signed
 | `npm test` | Unit tests: formula engine, booking slots and conflicts, data integrity, validation, answer-key protection |
 | `npm run check` | Lint + typecheck + tests |
 | `npm run seed:supabase` | Load the starter content into a Supabase project |
+| `npx tsx scripts/grant-role.ts <email> admin` | Give an existing account the admin (or `instructor`) role |
 
 ---
 
 ## Production setup with Supabase
 
 1. **Create a Supabase project** at supabase.com.
-2. **Apply the schema.** Run `supabase/migrations/20261017000000_init.sql` in the SQL editor, or use `supabase db push` with the Supabase CLI. It creates the tables, row-level security policies, the database functions (quiz grading, certificate issuing, availability, certificate verification) and a private `course-materials` storage bucket.
+2. **Apply the schema.** Run every file in `supabase/migrations/`, in filename order, in the SQL editor, or use `supabase db push` with the Supabase CLI. It creates the tables, row-level security policies, the database functions (quiz grading, certificate issuing, availability, certificate verification) and a private `course-materials` storage bucket.
 3. **Set the environment variables** (in `.env.local`, or in your host's settings):
    ```
    NEXT_PUBLIC_SUPABASE_URL=...
@@ -67,7 +68,7 @@ The local admin only works when Supabase is **not** configured. It sets a signed
    - Site URL: your domain.
    - Redirect URLs: `https://your-domain/auth/callback`, plus `http://localhost:3000/auth/callback` for development.
    - Configure a custom SMTP sender so confirmation and reset emails come from BDIM.
-6. **Create the first administrator.** Sign up on the site, then run this in the Supabase SQL editor as the database owner:
+6. **Create the first administrator.** Sign up on the site, then either run `npx tsx scripts/grant-role.ts admin@your-domain admin` (uses the secret key from `.env.local`) or run this in the Supabase SQL editor as the database owner:
    ```sql
    insert into public.staff_roles (user_id, role)
    select id, 'admin' from auth.users where email = 'admin@your-domain';
@@ -130,9 +131,9 @@ The local admin only works when Supabase is **not** configured. It sets a signed
 | Question bank: search, filters, save, complete, attempts, hints, solutions | ✅ verified (browser storage) | ✅ stored per account (RLS) |
 | Excel formula practice (real evaluation) | ✅ verified | ✅ |
 | Coding Lab: Python, SQL and R execute in the browser, with output checks | ✅ verified | ✅ |
-| Question discussions | Hidden ("open once accounts are enabled") | ✅ implemented, not yet tested live |
-| Accounts: sign-up, sign-in, password reset | Explains demo mode | ✅ implemented, not yet tested live |
-| Enrollment (self-enroll or approval), lessons, notes, bookmarks | ✅ verified (browser storage) | ✅ implemented (RLS), not yet tested live |
+| Question discussions | Hidden ("open once accounts are enabled") | ✅ verified live |
+| Accounts: sign-up, sign-in, password reset | Explains demo mode | ✅ verified live |
+| Enrollment (self-enroll or approval), lessons, notes, bookmarks | ✅ verified (browser storage) | ✅ verified live (RLS) |
 | Quizzes graded on the server (answer keys never sent to the browser) | ✅ verified (Server Action) | ✅ `submit_quiz()` database function |
 | Certificates issued only when requirements are met | ✅ verified, watermarked "Demonstration" | ✅ `issue_certificate()` checks progress in the database; public verification page |
 | Assignments, portfolio, profile, streaks, learner dashboard | ✅ verified | ✅ implemented |

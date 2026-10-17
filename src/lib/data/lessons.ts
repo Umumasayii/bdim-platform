@@ -18,9 +18,13 @@ export async function getLessonContent(courseSlug: string, lessonId: string): Pr
     const db = await createUserClient();
     const { data, error } = await db.from("lesson_contents").select("body").eq("lesson_id", lessonId).maybeSingle();
     if (error || !data) {
-      // No row visible: either locked by RLS, or no content written yet.
-      const { data: lesson } = await db.from("lessons").select("is_sample").eq("id", lessonId).maybeSingle();
-      return lesson?.is_sample ? { status: "empty" } : { status: "locked" };
+      // No row visible: either hidden by RLS, or no content written yet.
+      // Ask the database whether this viewer has access to tell them apart.
+      const { data: lesson } = await db.from("lessons").select("is_sample, course_id").eq("id", lessonId).maybeSingle();
+      if (!lesson) return { status: "locked" };
+      if (lesson.is_sample) return { status: "empty" };
+      const { data: access } = await db.rpc("has_course_access", { p_course_id: lesson.course_id });
+      return access === true ? { status: "empty" } : { status: "locked" };
     }
     return data.body ? { status: "ok", body: data.body } : { status: "empty" };
   }

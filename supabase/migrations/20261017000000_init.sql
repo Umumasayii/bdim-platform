@@ -469,7 +469,7 @@ begin
 
   select nullif(full_name, '') into learner from public.profiles where id = auth.uid();
   insert into public.certificates (user_id, course_id, certificate_number, learner_name, course_title)
-  values (auth.uid(), p_course_id, 'BDIM-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10)), coalesce(learner, 'Learner'), c.title)
+  values (auth.uid(), p_course_id, 'BDIM-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)), coalesce(learner, 'Learner'), c.title)
   returning * into result;
 
   update public.enrollments set status = 'completed', updated_at = now() where user_id = auth.uid() and course_id = p_course_id;
