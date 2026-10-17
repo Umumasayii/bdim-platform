@@ -9,6 +9,10 @@ import { AdminShell } from "@/components/admin/admin-shell";
   Actions re-check authorisation independently, and in Supabase mode
   row-level security enforces it again in the database.
 */
+// Admin pages always wait for an authorisation check, so they are not
+// expected to render an instant static shell.
+export const instant = false;
+
 async function Gate({ children }: { children: React.ReactNode }) {
   const viewer = await requireStaffPage();
   return (
