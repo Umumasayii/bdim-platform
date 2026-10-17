@@ -31,17 +31,46 @@ export const site = {
   logo: { full: "/brand/bdim-logo.png", mark: "/brand/bdim-mark.png" },
 };
 
-/** `secondary` items move into a "More" menu on mid-width desktops. */
-export const mainNav: { href: string; label: string; secondary?: boolean }[] = [
-  { href: "/", label: "Home", secondary: true },
-  { href: "/courses", label: "Courses" },
-  { href: "/learning-paths", label: "Learning Paths" },
-  { href: "/practice", label: "Practice" },
-  { href: "/questions", label: "Question Bank" },
-  { href: "/coding-lab", label: "Coding Lab" },
-  { href: "/library", label: "Library", secondary: true },
-  { href: "/live-training", label: "Live Training" },
-  { href: "/consulting", label: "Consulting", secondary: true },
-  { href: "/about", label: "About Us", secondary: true },
-  { href: "/contact", label: "Contact", secondary: true },
+export interface NavItem {
+  href: string;
+  label: string;
+  description: string;
+}
+
+/** Top bar: four grouped menus (the logo links home). */
+export const navGroups: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Learn",
+    items: [
+      { href: "/courses", label: "Courses", description: "Every course, with outlines and free sample lessons" },
+      { href: "/learning-paths", label: "Learning Paths", description: "Courses in a recommended order for your career" },
+      { href: "/library", label: "Library", description: "Books, notes, slides and datasets" },
+      { href: "/projects", label: "Project Portfolio", description: "Real analyses built step by step" },
+    ],
+  },
+  {
+    label: "Practice",
+    items: [
+      { href: "/practice", label: "Free Practice Zone", description: "Quick exercises, Excel formulas and KPIs" },
+      { href: "/questions", label: "Question Bank", description: "Interview-style questions with solutions" },
+      { href: "/coding-lab", label: "Coding Lab", description: "Run Python, SQL and R in your browser" },
+    ],
+  },
+  {
+    label: "Services",
+    items: [
+      { href: "/live-training", label: "Live Training & Booking", description: "Book one-to-one or group sessions" },
+      { href: "/corporate-training", label: "Corporate Training", description: "Programmes for teams and institutions" },
+      { href: "/consulting", label: "Consulting", description: "Data analysis, dashboards and research support" },
+      { href: "/pricing", label: "Pricing", description: "How fees and quotes work" },
+    ],
+  },
+  {
+    label: "About",
+    items: [
+      { href: "/about", label: "About Us", description: "Our mission and your instructor" },
+      { href: "/contact", label: "Contact", description: "Email, WhatsApp or send a message" },
+      { href: "/certificates/verify", label: "Verify a Certificate", description: "Check a BDIM certificate number" },
+    ],
+  },
 ];

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isSupabaseConfigured, siteUrl } from "@/lib/config";
 import { TAGS } from "@/lib/data/content";
-import { LIBRARY_TAG } from "@/lib/data/library";
+import { LIBRARY_TAG, PAYMENT_TAG } from "@/lib/data/library";
 import { getStore } from "@/lib/data/store";
 import { checkLocalAdminPassword, createLocalAdminToken, LOCAL_ADMIN_COOKIE } from "@/lib/auth/local-admin";
 import { requireStaff } from "@/lib/auth/viewer";
@@ -21,6 +21,8 @@ import type {
   InstructorProfile,
   LearningPath,
   LibraryItem,
+  LibraryOrderStatus,
+  PaymentSettings,
   Question,
   Testimonial,
 } from "@/lib/types";
@@ -297,6 +299,9 @@ export async function saveLibraryItem(item: LibraryItem): Promise<AdminResult> {
   if (!title) return { ok: false, message: "Give the item a title." };
   if (!item.filePath && !/^https?:\/\//.test(item.externalUrl.trim())) return { ok: false, message: "Upload a file or add a link (https://…)." };
   if (item.visibility === "enrolled" && !item.courseId) return { ok: false, message: "Choose the course whose learners can open it." };
+  const price = Number(item.price) || 0;
+  if (price < 0 || price > 10_000_000) return { ok: false, message: "Enter a valid price (0 for free)." };
+  if (price > 0 && !item.filePath) return { ok: false, message: "Items for sale must be an uploaded file — a link could be opened without paying." };
   const row = {
     title: title.slice(0, 200),
     description: item.description.slice(0, 2000),
@@ -304,9 +309,11 @@ export async function saveLibraryItem(item: LibraryItem): Promise<AdminResult> {
     file_path: item.filePath,
     file_name: item.fileName,
     file_size: item.fileSize,
-    external_url: item.externalUrl.trim(),
+    external_url: price > 0 ? "" : item.externalUrl.trim(),
     course_id: item.courseId || null,
     visibility: item.visibility,
+    price,
+    currency: (item.currency || "RWF").slice(0, 3).toUpperCase(),
     published: item.published,
     sort_order: item.sortOrder,
     updated_at: new Date().toISOString(),
@@ -327,4 +334,55 @@ export async function deleteLibraryItem(id: string, filePath: string): Promise<A
   if (filePath) await db.storage.from("library").remove([filePath]);
   updateTag(LIBRARY_TAG);
   return { ok: true, message: "Deleted." };
+}
+
+// ───────── Library sales (staff) ─────────
+export async function setLibraryOrderStatus(id: string, status: LibraryOrderStatus): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  const viewer = await requireStaff();
+  const db = await createUserClient();
+  const { data, error } = await db
+    .from("library_orders")
+    .update({ status, paid_at: status === "paid" ? new Date().toISOString() : null, confirmed_by: status === "paid" && !viewer.local ? viewer.id : null })
+    .eq("id", id)
+    .select("user_id, amount, currency, library_items(title)")
+    .single();
+  if (error) return { ok: false, message: error.message };
+  if (status === "paid") {
+    try {
+      const { data: u } = await createServiceClient().auth.admin.getUserById(data.user_id);
+      const title = (data.library_items as unknown as { title: string } | null)?.title ?? "your item";
+      if (u.user?.email) {
+        await sendEmail(
+          u.user.email,
+          `Payment confirmed: ${title}`,
+          `Hello,\n\nWe have received your payment of ${Number(data.amount).toLocaleString("en-US")} ${data.currency} for "${title}". It is now unlocked.\n\nDownload it from the library: ${siteUrl}/library\n\nThank you,\nBDIM`,
+        );
+      }
+    } catch {
+      // The order is confirmed even if the email fails.
+    }
+  }
+  return { ok: true, message: status === "paid" ? "Payment confirmed — the learner can now download it." : status === "cancelled" ? "Order cancelled." : "Order reopened." };
+}
+
+export async function savePaymentSettings(input: PaymentSettings): Promise<AdminResult> {
+  const denied = await guard(true);
+  if (denied) return denied;
+  const clip = (v: string, n: number) => (v ?? "").trim().slice(0, n);
+  const db = await createUserClient();
+  const { error } = await db
+    .from("payment_settings")
+    .update({
+      momo_number: clip(input.momoNumber, 40),
+      momo_name: clip(input.momoName, 120),
+      bank_details: clip(input.bankDetails, 600),
+      instructions: clip(input.instructions, 1000),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+  if (error) return { ok: false, message: error.message };
+  updateTag(PAYMENT_TAG);
+  return { ok: true, message: "Payment details saved." };
 }

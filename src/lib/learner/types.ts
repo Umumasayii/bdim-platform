@@ -45,6 +45,8 @@ export interface LearnerState {
     demo: boolean;
   }[];
   profile: LearnerProfile;
+  /** Staff role of the signed-in account (shows admin shortcuts; the server re-checks every action). */
+  role?: "admin" | "instructor";
   lastLesson?: { courseId: string; courseSlug: string; lessonId: string; at: string };
 }
 

@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/config";
 import { createPublicClient, createUserClient } from "@/lib/supabase/server";
-import type { LibraryItem } from "@/lib/types";
+import type { LibraryItem, LibraryOrder, PaymentSettings } from "@/lib/types";
 
 export const LIBRARY_TAG = "library";
 
@@ -18,6 +18,8 @@ function fromRow(r: Record<string, unknown>): LibraryItem {
     externalUrl: (r.external_url as string) ?? "",
     courseId: (r.course_id as string) ?? null,
     visibility: r.visibility as LibraryItem["visibility"],
+    price: Number(r.price ?? 0),
+    currency: (r.currency as string) || "RWF",
     published: Boolean(r.published),
     sortOrder: Number(r.sort_order ?? 0),
     createdAt: r.created_at as string,
@@ -41,4 +43,35 @@ export async function getAllLibraryItems(): Promise<LibraryItem[]> {
   const { data, error } = await db.from("library_items").select("*").order("sort_order").order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map(fromRow);
+}
+
+export const PAYMENT_TAG = "payment-settings";
+
+export function orderFromRow(r: Record<string, unknown>): LibraryOrder {
+  return {
+    id: r.id as string,
+    itemId: r.item_id as string,
+    userId: r.user_id as string,
+    amount: Number(r.amount ?? 0),
+    currency: (r.currency as string) || "RWF",
+    status: r.status as LibraryOrder["status"],
+    payerPhone: (r.payer_phone as string) ?? "",
+    paymentReference: (r.payment_reference as string) ?? "",
+    note: (r.note as string) ?? "",
+    createdAt: r.created_at as string,
+    paidAt: (r.paid_at as string) ?? null,
+  };
+}
+
+const emptyPayment: PaymentSettings = { momoNumber: "", momoName: "", bankDetails: "", instructions: "" };
+
+/** Payment details for buyers (public). */
+export async function getPaymentSettings(): Promise<PaymentSettings> {
+  "use cache";
+  cacheTag(PAYMENT_TAG);
+  cacheLife("minutes");
+  if (!isSupabaseConfigured) return emptyPayment;
+  const { data } = await createPublicClient().from("payment_settings").select("*").eq("id", 1).maybeSingle();
+  if (!data) return emptyPayment;
+  return { momoNumber: data.momo_number ?? "", momoName: data.momo_name ?? "", bankDetails: data.bank_details ?? "", instructions: data.instructions ?? "" };
 }

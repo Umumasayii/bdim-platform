@@ -35,19 +35,20 @@ const uid = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? cry
 
 async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState> {
   const s = emptyLearnerState();
-  const [enr, prog, notes, marks, quiz, asg, att, saved, done, port, certs, profile] = await Promise.all([
-    db.from("enrollments").select("course_id,status,created_at"),
-    db.from("lesson_progress").select("lesson_id,course_id,completed_at"),
-    db.from("lesson_notes").select("lesson_id,course_id,body,updated_at"),
-    db.from("lesson_bookmarks").select("lesson_id,course_id,created_at"),
-    db.from("quiz_submissions").select("quiz_id,course_id,score,passed,created_at"),
-    db.from("assignment_submissions").select("*"),
-    db.from("practice_attempts").select("question_id,correct,created_at").order("created_at", { ascending: false }).limit(500),
-    db.from("saved_questions").select("question_id,created_at"),
-    db.from("question_completions").select("question_id,completed_at"),
-    db.from("portfolio_items").select("*"),
-    db.from("certificates").select("*"),
+  const [enr, prog, notes, marks, quiz, asg, att, saved, done, port, certs, profile, role] = await Promise.all([
+    db.from("enrollments").select("course_id,status,created_at").eq("user_id", user.id),
+    db.from("lesson_progress").select("lesson_id,course_id,completed_at").eq("user_id", user.id),
+    db.from("lesson_notes").select("lesson_id,course_id,body,updated_at").eq("user_id", user.id),
+    db.from("lesson_bookmarks").select("lesson_id,course_id,created_at").eq("user_id", user.id),
+    db.from("quiz_submissions").select("quiz_id,course_id,score,passed,created_at").eq("user_id", user.id),
+    db.from("assignment_submissions").select("*").eq("user_id", user.id),
+    db.from("practice_attempts").select("question_id,correct,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(500),
+    db.from("saved_questions").select("question_id,created_at").eq("user_id", user.id),
+    db.from("question_completions").select("question_id,completed_at").eq("user_id", user.id),
+    db.from("portfolio_items").select("*").eq("user_id", user.id),
+    db.from("certificates").select("*").eq("user_id", user.id),
     db.from("profiles").select("full_name,headline,bio,avatar_url,preferences").eq("id", user.id).maybeSingle(),
+    db.from("staff_roles").select("role").eq("user_id", user.id).maybeSingle(),
   ]);
   enr.data?.forEach((r) => (s.enrollments[r.course_id] = { status: r.status, createdAt: r.created_at }));
   prog.data?.forEach((r) => (s.lessonsCompleted[r.lesson_id] = { courseId: r.course_id, at: r.completed_at }));
@@ -94,6 +95,7 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
       issuedAt: r.issued_at,
       demo: false,
     })) ?? [];
+  s.role = role.data?.role === "admin" || role.data?.role === "instructor" ? role.data.role : undefined;
   if (profile.data) {
     s.profile = {
       fullName: profile.data.full_name ?? "",

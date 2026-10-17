@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
-import { ChevronDown, LayoutDashboard, LogOut, Menu, UserRound, X } from "lucide-react";
-import { mainNav } from "@/lib/site";
+import { ChevronDown, LayoutDashboard, LogOut, Menu, ShieldCheck, UserRound, X } from "lucide-react";
+import { navGroups } from "@/lib/site";
 import { useLearner } from "@/lib/learner/provider";
 import { buttonClass } from "@/components/ui/button";
 import { Container } from "@/components/ui/layout";
@@ -64,9 +64,15 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-navy-900">{fullName || firstName}</p>
                 <p className="truncate text-xs text-muted">{user.email}</p>
+                {state.role ? <p className="mt-0.5 text-xs font-semibold capitalize text-teal-700">{state.role}</p> : null}
               </div>
             </div>
-            <Link role="menuitem" href="/dashboard" className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface" onClick={() => setOpen(false)}>
+            {state.role ? (
+              <Link role="menuitem" href="/admin" className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-surface" onClick={() => setOpen(false)}>
+                <ShieldCheck className="size-4" aria-hidden /> Admin panel
+              </Link>
+            ) : null}
+            <Link role="menuitem" href="/dashboard" className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface", !state.role && "mt-1")} onClick={() => setOpen(false)}>
               <LayoutDashboard className="size-4" aria-hidden /> My learning
             </Link>
             <Link role="menuitem" href="/dashboard?tab=profile" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface" onClick={() => setOpen(false)}>
@@ -99,40 +105,62 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function MoreMenu({ pathname }: { pathname: string }) {
+/** Admin shortcut in the top bar, shown only to staff accounts. */
+function AdminLink() {
+  const { state } = useLearner();
+  if (!state.role) return null;
+  return (
+    <Link href="/admin" className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full bg-teal-600 px-3 text-sm font-semibold text-white hover:bg-teal-700">
+      <ShieldCheck className="size-4" aria-hidden /> Admin
+    </Link>
+  );
+}
+
+function NavMenu({ group, pathname }: { group: (typeof navGroups)[number]; pathname: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   useDismiss(open, setOpen, ref);
-  const items = mainNav.filter((n) => n.secondary);
-  const active = items.some((n) => isActive(pathname, n.href));
+  const active = group.items.some((n) => isActive(pathname, n.href));
+  const id = `nav-${group.label.toLowerCase()}`;
   return (
-    <li className="relative 2xl:hidden" ref={ref}>
+    <li
+      className="relative"
+      ref={ref}
+      onPointerEnter={(e) => e.pointerType === "mouse" && (clearTimeout(timer.current), setOpen(true))}
+      onPointerLeave={(e) => e.pointerType === "mouse" && (timer.current = setTimeout(() => setOpen(false), 150))}
+    >
       <button
         type="button"
         aria-expanded={open}
-        aria-haspopup="menu"
-        onClick={() => setOpen((v) => !v)}
+        aria-controls={id}
+        // Hover already opened it for mouse users, so a click keeps it open; the keyboard (detail 0) toggles.
+        onClick={(e) => setOpen((v) => (e.detail === 0 ? !v : true))}
         className={cn(
-          "flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-2 text-[13.5px] font-medium transition-colors",
-          active ? "bg-navy-50 text-navy-900" : "text-muted hover:text-navy-900",
+          "flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          active || open ? "bg-navy-50 text-navy-900" : "text-muted hover:text-navy-900",
         )}
       >
-        More <ChevronDown className="size-3.5" aria-hidden />
+        {group.label}
+        <ChevronDown className={cn("size-3.5 transition-transform", open && "rotate-180")} aria-hidden />
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 z-50 mt-2 w-48 rounded-xl border border-line bg-white p-1.5 shadow-[var(--shadow-lift)]">
-          {items.map((n) => (
-            <Link
-              key={n.href}
-              role="menuitem"
-              href={n.href}
-              onClick={() => setOpen(false)}
-              aria-current={isActive(pathname, n.href) ? "page" : undefined}
-              className={cn("block rounded-lg px-3 py-2 text-sm hover:bg-surface", isActive(pathname, n.href) && "font-semibold text-navy-900")}
-            >
-              {n.label}
-            </Link>
-          ))}
+        <div id={id} className="absolute left-0 top-full z-50 pt-2">
+          <ul className="w-80 rounded-2xl border border-line bg-white p-2 shadow-[var(--shadow-lift)]">
+            {group.items.map((n) => (
+              <li key={n.href}>
+                <Link
+                  href={n.href}
+                  onClick={() => setOpen(false)}
+                  aria-current={isActive(pathname, n.href) ? "page" : undefined}
+                  className={cn("block rounded-xl px-3 py-2.5 hover:bg-surface", isActive(pathname, n.href) && "bg-surface")}
+                >
+                  <span className="block text-sm font-semibold text-navy-900">{n.label}</span>
+                  <span className="block text-xs text-muted">{n.description}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
     </li>
@@ -179,30 +207,19 @@ function HeaderView({ pathname }: { pathname: string }) {
       </a>
       <Container className="flex h-16 max-w-[96rem] items-center justify-between gap-3">
         <Logo className="shrink-0" />
-        <nav aria-label="Main" className="hidden min-w-0 xl:block">
-          <ul className="flex items-center gap-0.5">
-            {mainNav.map((item) => (
-              <li key={item.href} className={cn(item.secondary && "hidden 2xl:block")}>
-                <Link
-                  href={item.href}
-                  aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                  className={cn(
-                    "block whitespace-nowrap rounded-lg px-2.5 py-2 text-[13.5px] font-medium transition-colors",
-                    isActive(pathname, item.href) ? "bg-navy-50 text-navy-900" : "text-muted hover:text-navy-900",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              </li>
+        <nav aria-label="Main" className="hidden lg:block">
+          <ul className="flex items-center gap-1">
+            {navGroups.map((g) => (
+              <NavMenu key={g.label} group={g} pathname={pathname} />
             ))}
-            <MoreMenu pathname={pathname} />
           </ul>
         </nav>
-        <div className="hidden shrink-0 items-center gap-2 xl:flex">
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
+          <AdminLink />
           <ThemeToggle />
           <AccountMenu />
         </div>
-        <div className="flex items-center gap-2 xl:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
           <ThemeToggle />
           <button
             type="button"
@@ -218,29 +235,35 @@ function HeaderView({ pathname }: { pathname: string }) {
       </Container>
 
       {open ? (
-        <div id="mobile-menu" className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-line bg-white xl:hidden">
+        <div id="mobile-menu" className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-line bg-white lg:hidden">
           <Container className="py-4">
-            <nav aria-label="Mobile">
-              <ul className="grid gap-1">
-                {mainNav.map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      aria-current={isActive(pathname, item.href) ? "page" : undefined}
-                      className={cn(
-                        "block rounded-xl px-4 py-3 text-base font-medium",
-                        isActive(pathname, item.href) ? "bg-navy-50 text-navy-900" : "text-navy-800 hover:bg-surface",
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <div className="mt-4 border-t border-line pt-4">
+            <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-line pb-4">
               <AccountMenu compact />
+              <AdminLink />
             </div>
+            <nav aria-label="Mobile" className="grid gap-5 sm:grid-cols-2">
+              {navGroups.map((g) => (
+                <div key={g.label}>
+                  <p className="px-4 text-xs font-bold uppercase tracking-wider text-muted">{g.label}</p>
+                  <ul className="mt-1 grid">
+                    {g.items.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          aria-current={isActive(pathname, item.href) ? "page" : undefined}
+                          className={cn(
+                            "block rounded-xl px-4 py-2.5 text-base font-medium",
+                            isActive(pathname, item.href) ? "bg-navy-50 text-navy-900" : "text-navy-800 hover:bg-surface",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </nav>
           </Container>
         </div>
       ) : null}

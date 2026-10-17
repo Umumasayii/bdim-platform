@@ -37,6 +37,8 @@ const blank = (): LibraryItem => ({
   externalUrl: "",
   courseId: null,
   visibility: "members",
+  price: 0,
+  currency: "RWF",
   published: true,
   sortOrder: 0,
   createdAt: "",
@@ -89,7 +91,7 @@ function ItemForm({ initial, courses, onDone }: { initial: LibraryItem; courses:
               label="Upload a file (max 50 MB)"
               onUploaded={(f) => setItem((x) => ({ ...x, filePath: f.path, fileName: f.name, fileSize: f.size, externalUrl: "" }))}
             />
-            <div>
+            <div className={item.price > 0 ? "hidden" : undefined}>
               <label htmlFor={`${fid}-u`} className="sr-only">
                 Or a link
               </label>
@@ -99,8 +101,22 @@ function ItemForm({ initial, courses, onDone }: { initial: LibraryItem; courses:
         )}
       </div>
 
+      <div className="grid gap-4 rounded-xl bg-surface p-4 md:grid-cols-[12rem_1fr] md:items-end">
+        <Field label="Price (0 = free)" htmlFor={`${fid}-pr`}>
+          <div className="flex items-center gap-2">
+            <Input id={`${fid}-pr`} type="number" min={0} step={100} value={item.price} onChange={(e) => set("price", Math.max(0, Number(e.target.value)))} />
+            <span className="text-sm font-semibold text-muted">{item.currency}</span>
+          </div>
+        </Field>
+        <p className="text-sm text-muted">
+          {item.price > 0
+            ? "For sale: learners order it, pay by Mobile Money or bank, and the download unlocks when you confirm the payment below. Items for sale must be an uploaded file."
+            : "Free: who can open it is set by the option below."}
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Who can open it" htmlFor={`${fid}-v`}>
+        <Field label={item.price > 0 ? "Who can open it (ignored — buyers only)" : "Who can open it"} htmlFor={`${fid}-v`}>
           <Select id={`${fid}-v`} value={item.visibility} onChange={(e) => set("visibility", e.target.value as LibraryVisibility)}>
             {Object.entries(VISIBILITY_LABELS).map(([v, l]) => (
               <option key={v} value={v}>
@@ -174,7 +190,7 @@ export function LibraryAdmin({ items, courses }: { items: LibraryItem[]; courses
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-navy-950">{it.title}</p>
                   <p className="text-xs text-muted">
-                    {KIND_LABELS[it.kind]} · {VISIBILITY_LABELS[it.visibility]}
+                    {KIND_LABELS[it.kind]} · {it.price > 0 ? `For sale · ${it.price.toLocaleString("en-US")} ${it.currency}` : VISIBILITY_LABELS[it.visibility]}
                     {courseTitle(it.courseId) ? ` · ${courseTitle(it.courseId)}` : ""}
                     {it.fileSize ? ` · ${formatBytes(it.fileSize)}` : ""} · added {formatDate(it.createdAt)}
                   </p>

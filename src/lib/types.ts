@@ -406,7 +406,34 @@ export interface LibraryItem {
   externalUrl: string;
   courseId: string | null;
   visibility: LibraryVisibility;
+  /** 0 = free. A paid item is unlocked when staff confirm the learner's payment. */
+  price: number;
+  currency: string;
   published: boolean;
   sortOrder: number;
   createdAt: string;
+}
+
+export type LibraryOrderStatus = "pending" | "paid" | "cancelled";
+
+export interface LibraryOrder {
+  id: string;
+  itemId: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  status: LibraryOrderStatus;
+  payerPhone: string;
+  paymentReference: string;
+  note: string;
+  createdAt: string;
+  paidAt: string | null;
+}
+
+/** Payment details shown to buyers; edited in Admin → Library. */
+export interface PaymentSettings {
+  momoNumber: string;
+  momoName: string;
+  bankDetails: string;
+  instructions: string;
 }
