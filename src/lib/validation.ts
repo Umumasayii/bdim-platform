@@ -44,6 +44,7 @@ export const lessonSchema = z.object({
   isSample: z.boolean().optional(),
   content: z.string().max(50000).optional(),
   exerciseId: trimmed(80).optional(),
+  videoUrl: trimmed(500).optional(),
   resources: z.array(z.object({ label: required("Label"), url: required("URL", 500) })).optional(),
 });
 

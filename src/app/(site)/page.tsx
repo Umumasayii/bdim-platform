@@ -9,6 +9,7 @@ import { labExercises } from "@/content/exercises";
 import { getInstructors, getPublishedCourses, getPublishedPaths, getPublishedQuestions, getPublishedTestimonials } from "@/lib/data/content";
 import { site } from "@/lib/site";
 import { Container, Eyebrow, SectionHeading } from "@/components/ui/layout";
+import { Collapsible } from "@/components/ui/collapsible";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, levelTone } from "@/components/ui/badge";
 import { HeroDemo } from "@/components/home/hero-demo";
@@ -78,29 +79,32 @@ export default async function HomePage() {
       </section>
 
       {/* B. Career path selector */}
-      <section className="py-20" aria-labelledby="career-heading">
+      <section className="py-14" aria-label="Career roadmaps">
         <Container>
-          <SectionHeading
+          <Collapsible
+            id="career-paths"
             eyebrow="Choose your direction"
-            title={<span id="career-heading">Where do you want your data skills to take you?</span>}
+            title="Where do you want your data skills to take you?"
             description="Pick a goal to see a tailored roadmap: the stages, courses, projects and practice questions that build the skills for that role."
-          />
-          <CareerSelector
+          >
+            <CareerSelector
             goals={careerGoals}
             courses={courses.map((c) => ({ slug: c.slug, title: c.title, level: c.level }))}
             questions={questions.map((q) => ({ slug: q.slug, title: q.title, topic: q.topic }))}
           />
+          </Collapsible>
         </Container>
       </section>
 
       {/* C. Learning ecosystem */}
-      <section className="border-y border-line bg-surface py-20" aria-labelledby="eco-heading">
+      <section className="border-y border-line bg-surface py-14" aria-label="Learning ecosystem">
         <Container>
-          <SectionHeading
+          <Collapsible
+            id="ecosystem"
             eyebrow="Explore our learning ecosystem"
-            title={<span id="eco-heading">Eight connected areas of practice</span>}
+            title="Eight connected areas of practice"
             description="Skills that work together on real problems — from collecting data in the field to presenting decisions to leadership."
-          />
+          >
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {ecosystem.map((e) => (
               <li key={e.title}>
@@ -117,21 +121,19 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
+          </Collapsible>
         </Container>
       </section>
 
       {/* D. Featured learning paths */}
-      <section className="py-20" aria-labelledby="paths-heading">
+      <section className="py-14" aria-label="Featured learning paths">
         <Container>
-          <SectionHeading
+          <Collapsible
+            id="learning-tracks"
             eyebrow="Featured learning paths"
-            title={<span id="paths-heading">Structured tracks from first steps to advanced practice</span>}
-            action={
-              <ButtonLink href="/learning-paths" variant="outline">
-                All learning paths
-              </ButtonLink>
-            }
-          />
+            title="Structured tracks from first steps to advanced practice"
+            description="Beginner, intermediate and advanced tracks with prerequisites, modules, objectives and practical assignments."
+          >
           <div className="grid gap-6 lg:grid-cols-3">
             {trackPaths.map((p) => {
               const pathCourses = p.courseSlugs.map((s) => courseBySlug.get(s)).filter((c) => c !== undefined);
@@ -179,21 +181,25 @@ export default async function HomePage() {
               );
             })}
           </div>
+          <div className="mt-8">
+            <ButtonLink href="/learning-paths" variant="outline">
+              All learning paths
+            </ButtonLink>
+          </div>
+          </Collapsible>
         </Container>
       </section>
 
       {/* E. Interactive practice preview */}
-      <section className="border-y border-line bg-navy-950 py-20 text-white" aria-labelledby="practice-heading">
+      <section className="border-y border-line bg-navy-950 py-14 text-white" aria-label="Practice preview">
         <Container>
-          <div className="mb-10 max-w-2xl">
-            <Eyebrow className="text-teal-300">Practice preview</Eyebrow>
-            <h2 id="practice-heading" className="mt-2 text-3xl font-bold sm:text-4xl">
-              Learn by doing, with feedback straight away
-            </h2>
-            <p className="mt-3 text-lg text-navy-200">
-              Answer a sample question below, then try a real coding exercise. Explanations show the reasoning, not just the answer.
-            </p>
-          </div>
+          <Collapsible
+            id="practice-preview"
+            tone="dark"
+            eyebrow="Practice preview"
+            title="Learn by doing, with feedback straight away"
+            description="Answer a sample question, then try a real coding exercise. Explanations show the reasoning, not just the answer."
+          >
           <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
             <div className="text-ink">
               <QuestionPractice question={previewQuestion} compact />
@@ -221,6 +227,7 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+          </Collapsible>
         </Container>
       </section>
 
@@ -244,18 +251,14 @@ export default async function HomePage() {
       </section>
 
       {/* G. Projects */}
-      <section className="border-y border-line bg-surface py-20" aria-labelledby="projects-heading">
+      <section className="border-y border-line bg-surface py-14" aria-label="Practical projects">
         <Container>
-          <SectionHeading
+          <Collapsible
+            id="projects"
             eyebrow="Practical projects"
-            title={<span id="projects-heading">Projects that mirror real analytical work</span>}
+            title="Projects that mirror real analytical work"
             description="Demonstration projects built on synthetic data show the methods learners practise. They are labelled as examples."
-            action={
-              <ButtonLink href="/projects" variant="outline">
-                View project portfolio
-              </ButtonLink>
-            }
-          />
+          >
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {projects.slice(0, 4).map((p) => (
               <li key={p.slug}>
@@ -271,36 +274,43 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
+          <div className="mt-8">
+            <ButtonLink href="/projects" variant="outline">
+              View project portfolio
+            </ButtonLink>
+          </div>
+          </Collapsible>
         </Container>
       </section>
 
       {/* H. Instructor */}
       {instructors.length ? (
-        <section className="py-20" aria-labelledby="instructor-heading">
+        <section className="py-14" aria-label="Instructor">
           <Container>
-            <SectionHeading eyebrow="Learn with" title={<span id="instructor-heading">Your instructor</span>} />
+            <Collapsible id="instructor" eyebrow="Learn with" title="Your instructor" description={`Meet ${instructors.map((i) => i.name).join(", ")}.`}>
             <div className="grid gap-6">
               {instructors.map((i) => (
                 <InstructorCard key={i.id} profile={i} />
               ))}
             </div>
+            </Collapsible>
           </Container>
         </section>
       ) : null}
 
       {/* I. Corporate & consulting */}
-      <section className="border-y border-line bg-gradient-to-br from-navy-900 to-navy-800 py-20 text-white" aria-labelledby="org-heading">
-        <Container className="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
+      <section className="border-y border-line bg-gradient-to-br from-navy-900 to-navy-800 py-14 text-white" aria-label="For organizations">
+        <Container>
+          <Collapsible
+            id="organizations"
+            tone="dark"
+            eyebrow="For organizations"
+            title="Training and analytics support for your team"
+            description="Universities, NGOs, government institutions, research teams and companies can request customised training or practical analytics support — from survey design to dashboards and predictive models."
+          >
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
           <div>
-            <Eyebrow className="text-teal-300">For organizations</Eyebrow>
-            <h2 id="org-heading" className="mt-2 text-3xl font-bold sm:text-4xl">
-              Training and analytics support for your team
-            </h2>
-            <p className="mt-4 text-lg leading-relaxed text-navy-200">
-              Universities, NGOs, government institutions, research teams and companies can request customised training or practical analytics
-              support — from survey design to dashboards and predictive models.
-            </p>
-            <ol className="mt-8 grid gap-4">
+            <ol className="grid gap-4">
               {[
                 ["Tell us what you need", "Share your goals, team size, timeline and tools."],
                 ["Scoping conversation", "We agree objectives, format and deliverables."],
@@ -335,6 +345,8 @@ export default async function HomePage() {
               </li>
             ))}
           </ul>
+          </div>
+          </Collapsible>
         </Container>
       </section>
 

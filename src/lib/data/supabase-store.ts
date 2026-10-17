@@ -51,6 +51,7 @@ interface LessonRow {
   duration_minutes: number;
   is_sample: boolean;
   exercise_id: string | null;
+  video_url: string | null;
   resources: Lesson["resources"];
 }
 
@@ -72,6 +73,7 @@ function courseFromRow(row: Record<string, unknown>, quizzes: Map<string, Quiz>)
           durationMinutes: l.duration_minutes,
           isSample: l.is_sample,
           exerciseId: l.exercise_id ?? undefined,
+          videoUrl: l.video_url || undefined,
           resources: l.resources ?? [],
         })),
     }));
@@ -156,6 +158,7 @@ export const supabaseStore: Store = {
             duration_minutes: l.durationMinutes,
             is_sample: Boolean(l.isSample),
             exercise_id: l.exerciseId ?? null,
+            video_url: l.videoUrl ?? "",
             resources: l.resources ?? [],
           })),
         ),

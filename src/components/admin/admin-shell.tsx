@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CalendarDays, GraduationCap, HelpCircle, Inbox, LayoutDashboard, LogOut, Map, MessageSquareQuote, UserRound } from "lucide-react";
+import { BookOpen, CalendarDays, ClipboardCheck, GraduationCap, HelpCircle, Inbox, LayoutDashboard, Library, LogOut, Map, MessageSquareQuote, UserRound, Users } from "lucide-react";
 import { localAdminLogout } from "@/app/actions/admin";
 import { useLearner } from "@/lib/learner/provider";
 import { LogoMark } from "@/components/layout/logo";
@@ -12,10 +12,13 @@ import type { Role } from "@/lib/types";
 
 const nav: { href: string; label: string; icon: typeof BookOpen; adminOnly?: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/users", label: "Users", icon: Users, adminOnly: true },
   { href: "/admin/courses", label: "Courses & lessons", icon: BookOpen },
+  { href: "/admin/library", label: "Library (books & notes)", icon: Library },
+  { href: "/admin/assignments", label: "Assignments & grades", icon: ClipboardCheck },
   { href: "/admin/questions", label: "Questions", icon: HelpCircle },
   { href: "/admin/paths", label: "Learning paths", icon: Map },
-  { href: "/admin/learners", label: "Learners", icon: GraduationCap },
+  { href: "/admin/learners", label: "Enrollment requests", icon: GraduationCap },
   { href: "/admin/bookings", label: "Bookings", icon: CalendarDays, adminOnly: true },
   { href: "/admin/inquiries", label: "Inquiries", icon: Inbox, adminOnly: true },
   { href: "/admin/instructors", label: "Instructors", icon: UserRound, adminOnly: true },

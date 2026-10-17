@@ -7,7 +7,7 @@ import { projects } from "@/content/projects";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [courses, paths, questions] = await Promise.all([getPublishedCourses(), getPublishedPaths(), getPublishedQuestions()]);
   const staticPages = [
-    "", "/courses", "/learning-paths", "/practice", "/questions", "/coding-lab", "/live-training", "/consulting",
+    "", "/courses", "/learning-paths", "/practice", "/questions", "/coding-lab", "/library", "/live-training", "/consulting",
     "/corporate-training", "/projects", "/pricing", "/about", "/contact", "/privacy", "/terms",
   ];
   return [

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Code2, Database, FileSpreadsheet, LineChart } from "lucide-react";
+import { ArrowRight, BookOpen, Code2, Database } from "lucide-react";
 import { formulaExercises, labExercises } from "@/content/exercises";
 import { getPublishedCourses, getPublishedQuestions } from "@/lib/data/content";
-import { Container, PageHeader, SectionHeading } from "@/components/ui/layout";
+import { Container, PageHeader } from "@/components/ui/layout";
 import { Badge, levelTone } from "@/components/ui/badge";
 import { FormulaLab } from "@/components/practice/formula-lab";
 import { KpiChallenge } from "@/components/practice/kpi-challenge";
 import { PracticeStats } from "@/components/practice/practice-stats";
+import { Collapsible } from "@/components/ui/collapsible";
 
 export const metadata: Metadata = {
   title: "Free Practice Zone",
@@ -47,16 +48,8 @@ export default async function PracticePage() {
       <Container className="grid gap-20 py-14">
         <PracticeStats totalFree={free.length} />
 
-        <section id="questions" className="scroll-mt-24">
-          <SectionHeading
-            eyebrow="Sample questions"
-            title={`${free.length} free questions across ${topics.length} topics`}
-            action={
-              <Link href="/questions" className="inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
-                Open the question bank <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            }
-          />
+        <section>
+          <Collapsible id="questions" eyebrow="Sample questions" title={`${free.length} free questions across ${topics.length} topics`} defaultOpen>
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {topics.map((t) => {
               const list = free.filter((q) => q.topic === t);
@@ -77,31 +70,20 @@ export default async function PracticePage() {
               );
             })}
           </ul>
+          <Link href="/questions" className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
+            Open the full question bank <ArrowRight className="size-4" aria-hidden />
+          </Link>
+          </Collapsible>
         </section>
 
-        <section id="excel" className="scroll-mt-24">
-          <SectionHeading
-            eyebrow="Excel challenges"
-            title={
-              <span className="inline-flex items-center gap-3">
-                <FileSpreadsheet className="size-8 text-leaf-600" aria-hidden /> Formula practice on a live worksheet
-              </span>
-            }
-            description="Type a formula and it is evaluated against the sheet — just like in Excel."
-          />
+        <section>
+          <Collapsible id="excel" eyebrow="Excel challenges" title="Formula practice on a live worksheet" description="Type a formula and it is evaluated against the sheet — just like in Excel.">
           <FormulaLab exercises={formulaExercises} />
+          </Collapsible>
         </section>
 
-        <section id="code" className="scroll-mt-24">
-          <SectionHeading
-            eyebrow="Coding exercises"
-            title="SQL, Python and R in your browser"
-            action={
-              <Link href="/coding-lab" className="inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
-                Open the Coding Lab <ArrowRight className="size-4" aria-hidden />
-              </Link>
-            }
-          />
+        <section>
+          <Collapsible id="code" eyebrow="Coding exercises" title="SQL, Python and R in your browser">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {freeLab.map((e) => (
               <li key={e.id}>
@@ -119,23 +101,20 @@ export default async function PracticePage() {
               </li>
             ))}
           </ul>
+          <Link href="/coding-lab" className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
+            Open the Coding Lab <ArrowRight className="size-4" aria-hidden />
+          </Link>
+          </Collapsible>
         </section>
 
-        <section id="kpi" className="scroll-mt-24">
-          <SectionHeading
-            eyebrow="Interpret a report"
-            title={
-              <span className="inline-flex items-center gap-3">
-                <LineChart className="size-8 text-teal-600" aria-hidden /> Read a Power BI-style KPI report
-              </span>
-            }
-            description="Dashboards only help if you can interpret them. Study the report, then answer three questions."
-          />
+        <section>
+          <Collapsible id="kpi" eyebrow="Interpret a report" title="Read a Power BI-style KPI report" description="Dashboards only help if you can interpret them. Study the report, then answer three questions.">
           <KpiChallenge />
+          </Collapsible>
         </section>
 
-        <section id="lessons" className="scroll-mt-24">
-          <SectionHeading eyebrow="Free introductory lessons" title="Sample lessons from our courses" />
+        <section>
+          <Collapsible id="lessons" eyebrow="Free introductory lessons" title="Sample lessons from our courses">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {sampleLessons.map(({ course, lesson }) => (
               <li key={lesson.id}>
@@ -150,6 +129,7 @@ export default async function PracticePage() {
               </li>
             ))}
           </ul>
+          </Collapsible>
         </section>
       </Container>
     </>

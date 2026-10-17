@@ -43,6 +43,8 @@ export interface Lesson {
   content?: string;
   /** Coding-lab exercise id practised in this lesson. */
   exerciseId?: string;
+  /** YouTube/Vimeo link, or "storage:<path>" for an uploaded video. */
+  videoUrl?: string;
   resources?: LessonResource[];
 }
 
@@ -388,4 +390,23 @@ export interface Viewer {
   role: Role;
   /** Local development admin session (no Supabase). */
   local: boolean;
+}
+
+export type LibraryKind = "book" | "notes" | "video" | "dataset" | "slides" | "other";
+export type LibraryVisibility = "public" | "members" | "enrolled";
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  description: string;
+  kind: LibraryKind;
+  filePath: string;
+  fileName: string;
+  fileSize: number;
+  externalUrl: string;
+  courseId: string | null;
+  visibility: LibraryVisibility;
+  published: boolean;
+  sortOrder: number;
+  createdAt: string;
 }

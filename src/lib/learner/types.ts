@@ -24,6 +24,12 @@ export interface LearnerState {
     status: "submitted" | "reviewed";
     feedback: string;
     at: string;
+    /** Uploaded file in the private `submissions` bucket. */
+    filePath?: string;
+    fileName?: string;
+    score?: number | null;
+    maxScore?: number | null;
+    gradedAt?: string | null;
   }[];
   attempts: { questionId: string; correct: boolean; at: string }[];
   saved: Record<string, string>;

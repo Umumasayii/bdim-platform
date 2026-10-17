@@ -39,6 +39,7 @@ export const mainNav: { href: string; label: string; secondary?: boolean }[] = [
   { href: "/practice", label: "Practice" },
   { href: "/questions", label: "Question Bank" },
   { href: "/coding-lab", label: "Coding Lab" },
+  { href: "/library", label: "Library", secondary: true },
   { href: "/live-training", label: "Live Training" },
   { href: "/consulting", label: "Consulting", secondary: true },
   { href: "/about", label: "About Us", secondary: true },

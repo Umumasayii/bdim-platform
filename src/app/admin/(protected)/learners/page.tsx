@@ -4,7 +4,8 @@ import { isSupabaseConfigured } from "@/lib/config";
 import { getStore } from "@/lib/data/store";
 import { createUserClient } from "@/lib/supabase/server";
 import { Notice } from "@/components/ui/notice";
-import { EnrollmentsTable, SubmissionsList, type EnrollmentRow, type SubmissionRow } from "@/components/admin/learner-admin";
+import Link from "next/link";
+import { EnrollmentsTable, type EnrollmentRow } from "@/components/admin/learner-admin";
 
 export const metadata = { title: "Learners" };
 
@@ -24,11 +25,10 @@ export default async function AdminLearnersPage() {
     );
   }
   const db = await createUserClient();
-  const [courses, enr, prog, subs, profiles] = await Promise.all([
+  const [courses, enr, prog, profiles] = await Promise.all([
     getStore().listCourses({ includeUnpublished: true }),
     db.from("enrollments").select("id,user_id,course_id,status,created_at").order("created_at", { ascending: false }).limit(500),
     db.from("lesson_progress").select("user_id,course_id"),
-    db.from("assignment_submissions").select("*").order("created_at", { ascending: false }).limit(200),
     db.from("profiles").select("id,full_name"),
   ]);
   const courseById = new Map(courses.map((c) => [c.id, c]));
@@ -51,30 +51,17 @@ export default async function AdminLearnersPage() {
     })
     .sort((a, b) => Number(b.status === "requested") - Number(a.status === "requested"));
 
-  const submissionRows: SubmissionRow[] = (subs.data ?? []).map((s) => {
-    const c = courseById.get(s.course_id);
-    return {
-      id: s.id,
-      learner: nameById.get(s.user_id) ?? "Learner",
-      courseTitle: c?.title ?? s.course_id,
-      assignmentTitle: c?.modules.find((m) => m.assignment?.id === s.assignment_id)?.assignment?.title ?? s.assignment_id,
-      body: s.body,
-      link: s.link,
-      status: s.status,
-      feedback: s.feedback,
-      createdAt: s.created_at,
-    };
-  });
-
   return (
     <div className="grid gap-10">
       <section>
-        <h1 className="mb-6 text-3xl font-bold text-navy-950">Learners</h1>
+        <h1 className="mb-6 text-3xl font-bold text-navy-950">Enrollment requests</h1>
         {enr.error ? <Notice tone="error">{enr.error.message}</Notice> : <EnrollmentsTable rows={enrollmentRows} />}
       </section>
       <section>
-        <h2 className="mb-4 text-xl font-bold text-navy-950">Assignment submissions</h2>
-        <SubmissionsList rows={submissionRows} />
+        <h2 className="mb-2 text-xl font-bold text-navy-950">Assignment submissions</h2>
+        <p className="text-sm text-muted">
+          Grade submissions in <Link href="/admin/assignments" className="font-semibold text-teal-700 underline">Assignments &amp; grades</Link>.
+        </p>
       </section>
     </div>
   );

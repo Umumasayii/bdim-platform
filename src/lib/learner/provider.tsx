@@ -8,6 +8,8 @@ import { gradeQuizLocal } from "@/app/actions/learning";
 import { blobToDataUrl, toSquareJpeg } from "@/lib/image";
 import { emptyLearnerState, type EnrollmentStatus, type LearnerMode, type LearnerProfile, type LearnerState, type QuizGradeResult } from "./types";
 
+export const SUBMISSION_MAX_BYTES = 20 * 1024 * 1024;
+
 const STORAGE_KEY = "bdim-learner-v1";
 
 function loadLocal(): LearnerState {
@@ -71,6 +73,11 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
       status: r.status,
       feedback: r.feedback,
       at: r.created_at,
+      filePath: r.file_path ?? "",
+      fileName: r.file_name ?? "",
+      score: r.score,
+      maxScore: r.max_score,
+      gradedAt: r.graded_at,
     })) ?? [];
   s.attempts = att.data?.map((r) => ({ questionId: r.question_id, correct: r.correct, at: r.created_at })) ?? [];
   saved.data?.forEach((r) => (s.saved[r.question_id] = r.created_at));
@@ -121,7 +128,7 @@ interface LearnerContextValue {
   saveNote: (courseId: string, lessonId: string, body: string) => Promise<boolean>;
   toggleBookmark: (courseId: string, lessonId: string) => Promise<void>;
   submitQuiz: (courseSlug: string, courseId: string, quizId: string, answers: Record<string, number>) => Promise<QuizGradeResult | null>;
-  submitAssignment: (courseId: string, assignmentId: string, body: string, link: string) => Promise<boolean>;
+  submitAssignment: (courseId: string, assignmentId: string, body: string, link: string, file?: File | null) => Promise<boolean>;
   recordAttempt: (questionId: string, correct: boolean) => Promise<void>;
   toggleSaved: (questionId: string) => Promise<void>;
   toggleCompleted: (questionId: string) => Promise<void>;
@@ -321,13 +328,32 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
         return r;
       },
 
-      async submitAssignment(courseId, assignmentId, body, link) {
+      async submitAssignment(courseId, assignmentId, body, link, file) {
         if (!requireMember()) return false;
         let id = uid();
+        let filePath = "";
+        const fileName = file?.name ?? "";
+        if (file && !member) {
+          setError("File uploads need a signed-in account. Paste a link instead.");
+          return false;
+        }
+        if (file && file.size > SUBMISSION_MAX_BYTES) {
+          setError("The file is larger than 20 MB. Share a link to it instead.");
+          return false;
+        }
         if (member) {
+          if (file) {
+            const safe = file.name.normalize("NFKD").replace(/[^\w.\-]+/g, "-").slice(-100);
+            filePath = `${user.id}/${courseId}/${assignmentId}/${Date.now()}-${safe}`;
+            const { error: upErr } = await db.storage.from("submissions").upload(filePath, file, { contentType: file.type || undefined });
+            if (upErr) {
+              setError(`Upload failed: ${upErr.message}`);
+              return false;
+            }
+          }
           const { data, error: err } = await db
             .from("assignment_submissions")
-            .insert({ user_id: user.id, course_id: courseId, assignment_id: assignmentId, body, link })
+            .insert({ user_id: user.id, course_id: courseId, assignment_id: assignmentId, body, link, file_path: filePath, file_name: fileName })
             .select("id")
             .single();
           if (err) {
@@ -337,7 +363,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
           id = data.id;
         }
         update((s) => {
-          s.assignments.push({ id, courseId, assignmentId, body, link, status: "submitted", feedback: "", at: nowIso() });
+          s.assignments.push({ id, courseId, assignmentId, body, link, status: "submitted", feedback: "", at: nowIso(), filePath, fileName });
           return s;
         });
         return true;

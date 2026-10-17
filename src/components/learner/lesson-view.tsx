@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Code2, Download, Lock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Code2, Download, Lock, Paperclip } from "lucide-react";
 import type { Course } from "@/lib/types";
-import { useLearner } from "@/lib/learner/provider";
+import { SUBMISSION_MAX_BYTES, useLearner } from "@/lib/learner/provider";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { getMaterialUrl } from "@/app/actions/learning";
 import { Markdown } from "@/components/ui/markdown";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Textarea, Input } from "@/components/ui/field";
 import { Notice } from "@/components/ui/notice";
 import { ModuleQuiz } from "./module-quiz";
+import { LessonVideo } from "./lesson-video";
 import type { LessonContentResult } from "@/lib/data/lessons";
 
 function NotesBox({ courseId, lessonId }: { courseId: string; lessonId: string }) {
@@ -44,10 +46,19 @@ function NotesBox({ courseId, lessonId }: { courseId: string; lessonId: string }
 }
 
 function AssignmentBox({ courseId, assignment }: { courseId: string; assignment: NonNullable<Course["modules"][number]["assignment"]> }) {
-  const { state, submitAssignment } = useLearner();
+  const { state, submitAssignment, mode } = useLearner();
   const [body, setBody] = useState("");
   const [link, setLink] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  async function openFile(path: string) {
+    const db = getBrowserSupabase();
+    const res = db ? await db.storage.from("submissions").createSignedUrl(path, 600) : null;
+    if (res?.data) window.open(res.data.signedUrl, "_blank", "noopener");
+    else setFileError("Could not open the file.");
+  }
   const submissions = state.assignments.filter((a) => a.assignmentId === assignment.id);
   return (
     <section className="rounded-2xl border border-line bg-white p-6">
@@ -57,10 +68,22 @@ function AssignmentBox({ courseId, assignment }: { courseId: string; assignment:
         <ul className="mt-4 grid gap-2">
           {submissions.map((s) => (
             <li key={s.id} className="rounded-xl bg-surface p-3 text-sm">
-              <p className="font-medium text-navy-900">
-                Submitted {new Date(s.at).toLocaleDateString("en-GB")} · {s.status === "reviewed" ? "Reviewed" : "Awaiting review"}
-              </p>
-              {s.feedback ? <p className="mt-1 text-muted">Feedback: {s.feedback}</p> : null}
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-navy-900">
+                  Submitted {new Date(s.at).toLocaleDateString("en-GB")} · {s.status === "reviewed" ? "Reviewed" : "Awaiting review"}
+                </p>
+                {s.score != null ? (
+                  <span className="rounded-full bg-teal-600 px-2.5 py-0.5 text-xs font-bold text-white">
+                    Grade: {s.score}/{s.maxScore ?? 100}
+                  </span>
+                ) : null}
+              </div>
+              {s.filePath ? (
+                <button type="button" onClick={() => void openFile(s.filePath!)} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-teal-700 underline">
+                  <Paperclip className="size-3.5" aria-hidden /> {s.fileName || "Attached file"}
+                </button>
+              ) : null}
+              {s.feedback ? <p className="mt-1 whitespace-pre-line text-muted">Feedback: {s.feedback}</p> : null}
             </li>
           ))}
         </ul>
@@ -74,20 +97,48 @@ function AssignmentBox({ courseId, assignment }: { courseId: string; assignment:
           Link to your file or repository (optional)
         </label>
         <Input id={`asg-link-${assignment.id}`} type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://" />
+        {mode === "member" ? (
+          <>
+            <label htmlFor={`asg-file-${assignment.id}`} className="text-sm font-medium">
+              Attach a file (optional, max 20 MB — PDF, Word, Excel, notebook, ZIP…)
+            </label>
+            <input
+              key={fileKey}
+              id={`asg-file-${assignment.id}`}
+              type="file"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                const tooBig = Boolean(f && f.size > SUBMISSION_MAX_BYTES);
+                setFileError(tooBig ? "That file is larger than 20 MB." : null);
+                setFile(tooBig ? null : f);
+              }}
+              className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-teal-700 hover:file:bg-teal-100"
+            />
+          </>
+        ) : (
+          <p className="text-xs text-muted">Sign in with an account to attach files. In demo mode, paste a link instead.</p>
+        )}
+        {fileError ? (
+          <p role="alert" className="text-xs font-medium text-red-600">
+            {fileError}
+          </p>
+        ) : null}
         <div>
           <Button
             variant="teal"
             disabled={!body.trim() || busy}
             onClick={async () => {
               setBusy(true);
-              if (await submitAssignment(courseId, assignment.id, body.trim(), link.trim())) {
+              if (await submitAssignment(courseId, assignment.id, body.trim(), link.trim(), file)) {
                 setBody("");
                 setLink("");
+                setFile(null);
+                setFileKey((k) => k + 1);
               }
               setBusy(false);
             }}
           >
-            Submit assignment
+            {busy ? "Submitting…" : "Submit assignment"}
           </Button>
         </div>
       </div>
@@ -162,14 +213,20 @@ export function LessonView({ course, lessonId, content }: { course: Course; less
         </div>
         <p className="mt-2 text-muted">{lesson.summary}</p>
 
+        {lesson.videoUrl ? (
+          <div className="mt-6">
+            <LessonVideo url={lesson.videoUrl} title={lesson.title} />
+          </div>
+        ) : null}
+
         <div className="mt-8">
           {content.status === "ok" ? (
             <Markdown source={content.body} />
-          ) : (
+          ) : !lesson.videoUrl && !lesson.resources?.length ? (
             <Notice tone="info" title="Lesson materials in preparation">
               The full materials for this lesson are being prepared by the instructor. The outline above shows what it will cover.
             </Notice>
-          )}
+          ) : null}
         </div>
 
         {lesson.exerciseId ? (

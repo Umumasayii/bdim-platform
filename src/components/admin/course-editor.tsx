@@ -11,6 +11,8 @@ import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { lines, toLines, useAdminAction } from "./admin-ui";
+import { RichTextEditor } from "./rich-text-editor";
+import { LessonMediaEditor } from "./lesson-media-editor";
 
 const FORMATS: DeliveryFormat[] = ["Live online", "In person (Kigali)", "Self-paced", "Corporate / group"];
 
@@ -336,37 +338,21 @@ export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course;
                       <Field label="Summary" htmlFor={`${l.id}-s`}>
                         <Input id={`${l.id}-s`} value={l.summary} onChange={(e) => setLesson(mi, li, { ...l, summary: e.target.value })} />
                       </Field>
-                      <Field label="Lesson content (Markdown: ## headings, - lists, ``` code ```, **bold**)" htmlFor={`${l.id}-c`}>
-                        <Textarea id={`${l.id}-c`} rows={10} className="font-mono text-xs" value={l.content ?? ""} onChange={(e) => setLesson(mi, li, { ...l, content: e.target.value })} />
-                      </Field>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field label="Coding Lab exercise" htmlFor={`${l.id}-x`}>
-                          <Select id={`${l.id}-x`} value={l.exerciseId ?? ""} onChange={(e) => setLesson(mi, li, { ...l, exerciseId: e.target.value || undefined })}>
-                            <option value="">None</option>
-                            {exerciseIds.map((x) => (
-                              <option key={x.id} value={x.id}>
-                                {x.title}
-                              </option>
-                            ))}
-                          </Select>
-                        </Field>
-                        <Field label="Materials (label | url, one per line)" htmlFor={`${l.id}-r`} hint="Use storage:<course-id>/<file> for private files in Supabase Storage.">
-                          <Textarea
-                            id={`${l.id}-r`}
-                            rows={2}
-                            value={(l.resources ?? []).map((r) => `${r.label} | ${r.url}`).join("\n")}
-                            onChange={(e) =>
-                              setLesson(mi, li, {
-                                ...l,
-                                resources: toLines(e.target.value)
-                                  .map((row) => row.split("|").map((s) => s.trim()))
-                                  .filter(([a, b]) => a && b)
-                                  .map(([label, url]) => ({ label, url })),
-                              })
-                            }
-                          />
-                        </Field>
+                      <div>
+                        <p className="mb-1.5 text-sm font-medium text-navy-900">Lesson content</p>
+                        <RichTextEditor id={`${l.id}-c`} value={l.content ?? ""} onChange={(v) => setLesson(mi, li, { ...l, content: v })} />
                       </div>
+                      <LessonMediaEditor courseId={c.id} lesson={l} onChange={(next) => setLesson(mi, li, next)} />
+                      <Field label="Coding Lab exercise" htmlFor={`${l.id}-x`} className="max-w-md">
+                        <Select id={`${l.id}-x`} value={l.exerciseId ?? ""} onChange={(e) => setLesson(mi, li, { ...l, exerciseId: e.target.value || undefined })}>
+                          <option value="">None</option>
+                          {exerciseIds.map((x) => (
+                            <option key={x.id} value={x.id}>
+                              {x.title}
+                            </option>
+                          ))}
+                        </Select>
+                      </Field>
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <Check label="Free sample lesson (visible without enrollment)" checked={Boolean(l.isSample)} onChange={(v) => setLesson(mi, li, { ...l, isSample: v })} />
                         <div className="flex gap-1">

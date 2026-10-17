@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, FileText, Lock, PlayCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, ClipboardCheck, FileText, Lock, PlayCircle } from "lucide-react";
 import { categories } from "@/content/categories";
 import { getCourseBySlug, getPublishedCourses } from "@/lib/data/content";
 import { courseLessonCount, courseMinutes } from "@/lib/data/sanitize";
@@ -118,12 +118,18 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
             <ol className="mt-5 grid gap-4">
               {course.modules.map((m, mi) => (
                 <li key={m.id} className="rounded-2xl border border-line bg-white">
-                  <div className="border-b border-line px-5 py-4">
-                    <Eyebrow>Module {mi + 1}</Eyebrow>
-                    <h3 className="mt-1 font-bold text-navy-950">{m.title}</h3>
-                    <p className="mt-0.5 text-sm text-muted">{m.summary}</p>
-                  </div>
-                  <ul className="divide-y divide-line">
+                  <details open={mi === 0} className="group [&_summary::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4 px-5 py-4">
+                    <span>
+                      <Eyebrow>Module {mi + 1}</Eyebrow>
+                      <span className="mt-1 block font-bold text-navy-950">{m.title}</span>
+                      <span className="mt-0.5 block text-sm text-muted">
+                        {m.summary} · {m.lessons.length} lessons{m.quiz ? " · quiz" : ""}{m.assignment ? " · assignment" : ""}
+                      </span>
+                    </span>
+                    <ChevronDown className="mt-5 size-5 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
+                  </summary>
+                  <ul className="divide-y divide-line border-t border-line">
                     {m.lessons.map((l) => (
                       <li key={l.id} className="flex items-center gap-3 px-5 py-3 text-sm">
                         {l.isSample ? (
@@ -160,6 +166,7 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
                       </li>
                     ) : null}
                   </ul>
+                  </details>
                 </li>
               ))}
             </ol>

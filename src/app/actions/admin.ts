@@ -3,13 +3,14 @@
 import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured } from "@/lib/config";
+import { isSupabaseConfigured, siteUrl } from "@/lib/config";
 import { TAGS } from "@/lib/data/content";
+import { LIBRARY_TAG } from "@/lib/data/library";
 import { getStore } from "@/lib/data/store";
 import { checkLocalAdminPassword, createLocalAdminToken, LOCAL_ADMIN_COOKIE } from "@/lib/auth/local-admin";
 import { requireStaff } from "@/lib/auth/viewer";
 import { rateLimit } from "@/lib/rate-limit";
-import { createUserClient } from "@/lib/supabase/server";
+import { createServiceClient, createUserClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
 import type {
   BookableService,
@@ -19,6 +20,7 @@ import type {
   InquiryStatus,
   InstructorProfile,
   LearningPath,
+  LibraryItem,
   Question,
   Testimonial,
 } from "@/lib/types";
@@ -200,4 +202,129 @@ export async function reviewAssignment(submissionId: string, feedback: string): 
     .update({ status: "reviewed", feedback: feedback.slice(0, 4000) })
     .eq("id", submissionId);
   return error ? { ok: false, message: error.message } : { ok: true, message: "Feedback saved." };
+}
+
+// ───────── Users (admin only, Supabase) ─────────
+export async function setUserRole(userId: string, role: "learner" | "instructor" | "admin"): Promise<AdminResult> {
+  let viewer;
+  try {
+    viewer = await requireStaff({ adminOnly: true });
+  } catch {
+    return { ok: false, message: "Administrator access is required." };
+  }
+  if (!isSupabaseConfigured) return { ok: false, message: "User management requires Supabase." };
+  if (userId === viewer.id && role !== "admin") return { ok: false, message: "You can't remove your own administrator access." };
+  const db = createServiceClient();
+  const { error } =
+    role === "learner"
+      ? await db.from("staff_roles").delete().eq("user_id", userId)
+      : await db.from("staff_roles").upsert({ user_id: userId, role });
+  return error ? { ok: false, message: error.message } : { ok: true, message: `Role set to ${role}.` };
+}
+
+export async function enrollUser(userId: string, courseId: string): Promise<AdminResult> {
+  const denied = await guard(true);
+  if (denied) return denied;
+  if (!isSupabaseConfigured) return { ok: false, message: "Enrollment management requires Supabase." };
+  const db = createServiceClient();
+  const { error } = await db
+    .from("enrollments")
+    .upsert({ user_id: userId, course_id: courseId, status: "active", updated_at: new Date().toISOString() }, { onConflict: "user_id,course_id" });
+  return error ? { ok: false, message: error.message } : { ok: true, message: "Enrolled." };
+}
+
+/** Short-lived download link for a learner's submitted file (staff only). */
+export async function getSubmissionFileUrl(path: string): Promise<{ ok: true; url: string } | { ok: false; message: string }> {
+  const denied = await guard();
+  if (denied) return { ok: false, message: denied.ok ? "" : denied.message };
+  const { data, error } = await createServiceClient().storage.from("submissions").createSignedUrl(path, 600);
+  return error || !data ? { ok: false, message: "File not found." } : { ok: true, url: data.signedUrl };
+}
+
+/** Grade a submission: score, out-of, feedback. The learner sees it and gets an email. */
+export async function gradeSubmission(input: { id: string; score: number; maxScore: number; feedback: string }): Promise<AdminResult> {
+  let viewer;
+  try {
+    viewer = await requireStaff();
+  } catch {
+    return { ok: false, message: "Staff access is required." };
+  }
+  if (!isSupabaseConfigured) return { ok: false, message: "Grading requires Supabase." };
+  const score = Number(input.score);
+  const maxScore = Number(input.maxScore);
+  if (!Number.isFinite(maxScore) || maxScore <= 0) return { ok: false, message: "“Out of” must be a positive number." };
+  if (!Number.isFinite(score) || score < 0 || score > maxScore) return { ok: false, message: `Score must be between 0 and ${maxScore}.` };
+  const db = await createUserClient();
+  const { data, error } = await db
+    .from("assignment_submissions")
+    .update({
+      status: "reviewed",
+      score,
+      max_score: maxScore,
+      feedback: input.feedback.slice(0, 4000),
+      graded_at: new Date().toISOString(),
+      graded_by: viewer.local ? null : viewer.id,
+    })
+    .eq("id", input.id)
+    .select("user_id, course_id, assignment_id")
+    .single();
+  if (error) return { ok: false, message: error.message };
+
+  // Let the learner know (best effort).
+  try {
+    const { data: u } = await createServiceClient().auth.admin.getUserById(data.user_id);
+    const course = (await getStore().listCourses({ includeUnpublished: true })).find((c) => c.id === data.course_id);
+    const assignment = course?.modules.find((m) => m.assignment?.id === data.assignment_id)?.assignment;
+    if (u.user?.email) {
+      await sendEmail(
+        u.user.email,
+        `Your assignment has been graded: ${assignment?.title ?? "assignment"}`,
+        `Hello,\n\nYour submission for "${assignment?.title ?? "your assignment"}" in ${course?.title ?? "your course"} has been graded.\n\nScore: ${score} / ${maxScore}${input.feedback ? `\n\nFeedback:\n${input.feedback}` : ""}\n\nSee all your grades: ${siteUrl}/dashboard?tab=grades\n\n— BDIM`,
+      );
+    }
+  } catch {
+    // Grade is saved even if the email fails.
+  }
+  return { ok: true, message: `Graded ${score} / ${maxScore}.` };
+}
+
+// ───────── Library (staff, Supabase) ─────────
+export async function saveLibraryItem(item: LibraryItem): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  if (!isSupabaseConfigured) return { ok: false, message: "The library requires Supabase." };
+  const title = item.title.trim();
+  if (!title) return { ok: false, message: "Give the item a title." };
+  if (!item.filePath && !/^https?:\/\//.test(item.externalUrl.trim())) return { ok: false, message: "Upload a file or add a link (https://…)." };
+  if (item.visibility === "enrolled" && !item.courseId) return { ok: false, message: "Choose the course whose learners can open it." };
+  const row = {
+    title: title.slice(0, 200),
+    description: item.description.slice(0, 2000),
+    kind: item.kind,
+    file_path: item.filePath,
+    file_name: item.fileName,
+    file_size: item.fileSize,
+    external_url: item.externalUrl.trim(),
+    course_id: item.courseId || null,
+    visibility: item.visibility,
+    published: item.published,
+    sort_order: item.sortOrder,
+    updated_at: new Date().toISOString(),
+  };
+  const db = await createUserClient();
+  const { error } = item.id ? await db.from("library_items").update(row).eq("id", item.id) : await db.from("library_items").insert(row);
+  if (error) return { ok: false, message: error.message };
+  updateTag(LIBRARY_TAG);
+  return { ok: true, message: item.id ? "Saved." : "Added to the library." };
+}
+
+export async function deleteLibraryItem(id: string, filePath: string): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  const db = await createUserClient();
+  const { error } = await db.from("library_items").delete().eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  if (filePath) await db.storage.from("library").remove([filePath]);
+  updateTag(LIBRARY_TAG);
+  return { ok: true, message: "Deleted." };
 }

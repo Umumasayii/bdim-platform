@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Award, BookOpen, Bookmark, Flame, FolderKanban, NotebookPen, Target, Trash2, UserRound } from "lucide-react";
+import { Award, BookOpen, Bookmark, ClipboardCheck, Flame, FolderKanban, NotebookPen, Target, Trash2, UserRound } from "lucide-react";
 import type { Course, Question } from "@/lib/types";
 import { useLearner } from "@/lib/learner/provider";
 import { computeStreak } from "@/lib/learner/types";
@@ -15,11 +15,12 @@ import { Notice } from "@/components/ui/notice";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
 
-type Tab = "overview" | "courses" | "practice" | "notes" | "portfolio" | "certificates" | "profile";
+type Tab = "overview" | "courses" | "grades" | "practice" | "notes" | "portfolio" | "certificates" | "profile";
 
 const tabs: { id: Tab; label: string; icon: typeof BookOpen }[] = [
   { id: "overview", label: "Overview", icon: Target },
   { id: "courses", label: "My courses", icon: BookOpen },
+  { id: "grades", label: "Grades", icon: ClipboardCheck },
   { id: "practice", label: "Practice history", icon: Flame },
   { id: "notes", label: "Notes & bookmarks", icon: NotebookPen },
   { id: "portfolio", label: "Portfolio", icon: FolderKanban },
@@ -256,8 +257,86 @@ export function LearnerDashboard({ courses, questions }: { courses: Course[]; qu
           )
         ) : null}
 
+        {tab === "grades" ? <Grades courses={courses} /> : null}
+
         {tab === "profile" ? <ProfileForm /> : null}
       </div>
+    </div>
+  );
+}
+
+function Grades({ courses }: { courses: Course[] }) {
+  const { state } = useLearner();
+  const course = (id: string) => courses.find((c) => c.id === id);
+  const subs = [...state.assignments].sort((a, b) => b.at.localeCompare(a.at));
+  const quizzes = Object.entries(state.quizResults);
+  if (!subs.length && !quizzes.length)
+    return <EmptyState title="No grades yet">Submit an assignment at the end of a module or take a module quiz. Your marks and feedback will appear here.</EmptyState>;
+  return (
+    <div className="grid gap-8">
+      {subs.length ? (
+        <section>
+          <h2 className="text-lg font-bold text-navy-950">Assignments</h2>
+          <ul className="mt-3 grid gap-3">
+            {subs.map((s) => {
+              const c = course(s.courseId);
+              const m = c?.modules.find((x) => x.assignment?.id === s.assignmentId);
+              const last = m?.lessons[m.lessons.length - 1];
+              return (
+                <li key={s.id} className="rounded-2xl border border-line bg-white p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-navy-950">{m?.assignment?.title ?? "Assignment"}</p>
+                      <p className="text-xs text-muted">
+                        {c?.title ?? "Course"} · submitted {formatDate(s.at)}
+                        {s.gradedAt ? ` · marked ${formatDate(s.gradedAt)}` : ""}
+                      </p>
+                    </div>
+                    {s.score != null ? (
+                      <span className="rounded-xl bg-teal-600 px-3 py-1.5 text-sm font-bold text-white">
+                        {s.score}/{s.maxScore ?? 100}
+                      </span>
+                    ) : (
+                      <Badge tone="amber">{s.status === "reviewed" ? "Reviewed" : "Awaiting marking"}</Badge>
+                    )}
+                  </div>
+                  {s.feedback ? <p className="mt-3 whitespace-pre-line rounded-xl bg-surface p-3 text-sm text-navy-900">{s.feedback}</p> : null}
+                  {c && last ? (
+                    <Link href={`/learn/${c.slug}/${last.id}`} className="mt-3 inline-block text-sm font-semibold text-teal-700 underline">
+                      Open the assignment
+                    </Link>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+      {quizzes.length ? (
+        <section>
+          <h2 className="text-lg font-bold text-navy-950">Module quizzes</h2>
+          <ul className="mt-3 grid gap-2">
+            {quizzes.map(([id, q]) => {
+              const c = course(q.courseId);
+              const quiz = c?.modules.find((m) => m.quiz?.id === id)?.quiz;
+              return (
+                <li key={id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 py-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="font-semibold text-navy-950">{quiz?.title ?? "Quiz"}</span>
+                    <span className="text-muted">
+                      {" "}
+                      · {c?.title ?? "Course"} · {q.attempts} attempt{q.attempts === 1 ? "" : "s"}
+                    </span>
+                  </span>
+                  <Badge tone={q.passed ? "green" : "amber"}>
+                    Best {q.best}% · {q.passed ? "Passed" : "Not passed yet"}
+                  </Badge>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

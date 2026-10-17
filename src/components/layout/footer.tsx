@@ -12,6 +12,7 @@ const columns = [
       { href: "/practice", label: "Free Practice Zone" },
       { href: "/questions", label: "Question Bank" },
       { href: "/coding-lab", label: "Coding Lab" },
+      { href: "/library", label: "Library" },
       { href: "/projects", label: "Project Portfolio" },
     ],
   },
