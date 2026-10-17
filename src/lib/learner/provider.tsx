@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { gradeQuizLocal } from "@/app/actions/learning";
+import { blobToDataUrl, toSquareJpeg } from "@/lib/image";
 import { emptyLearnerState, type EnrollmentStatus, type LearnerMode, type LearnerProfile, type LearnerState, type QuizGradeResult } from "./types";
 
 const STORAGE_KEY = "bdim-learner-v1";
@@ -44,7 +45,7 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
     db.from("question_completions").select("question_id,completed_at"),
     db.from("portfolio_items").select("*"),
     db.from("certificates").select("*"),
-    db.from("profiles").select("full_name,headline,bio,preferences").eq("id", user.id).maybeSingle(),
+    db.from("profiles").select("full_name,headline,bio,avatar_url,preferences").eq("id", user.id).maybeSingle(),
   ]);
   enr.data?.forEach((r) => (s.enrollments[r.course_id] = { status: r.status, createdAt: r.created_at }));
   prog.data?.forEach((r) => (s.lessonsCompleted[r.lesson_id] = { courseId: r.course_id, at: r.completed_at }));
@@ -91,6 +92,7 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
       fullName: profile.data.full_name ?? "",
       headline: profile.data.headline ?? "",
       bio: profile.data.bio ?? "",
+      avatarUrl: profile.data.avatar_url || undefined,
       preferences: profile.data.preferences ?? {},
     };
   }
@@ -126,6 +128,8 @@ interface LearnerContextValue {
   addPortfolioItem: (item: { title: string; description: string; url: string; courseId?: string }) => Promise<boolean>;
   removePortfolioItem: (id: string) => Promise<void>;
   updateProfile: (profile: LearnerProfile) => Promise<boolean>;
+  uploadAvatar: (file: File) => Promise<boolean>;
+  removeAvatar: () => Promise<boolean>;
   certificateStatus: (course: CertificateCourse) => { eligible: boolean; missingLessons: number; failingQuizzes: number };
   issueCertificate: (course: CertificateCourse) => Promise<boolean>;
 }
@@ -414,11 +418,48 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
           ))
         )
           return false;
-        update((s) => ((s.profile = profile), s));
+        update((s) => ((s.profile = { ...profile, avatarUrl: s.profile.avatarUrl }), s));
         return true;
       },
 
       certificateStatus,
+
+      async uploadAvatar(file) {
+        if (!requireMember()) return false;
+        let blob: Blob;
+        try {
+          blob = await toSquareJpeg(file);
+        } catch (err) {
+          setError((err as Error).message);
+          return false;
+        }
+        let url: string;
+        if (member) {
+          const path = `${user.id}/avatar.jpg`;
+          const { error: upErr } = await db.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg", cacheControl: "3600" });
+          if (upErr) {
+            setError(`Upload failed: ${upErr.message}`);
+            return false;
+          }
+          // Version query so browsers and the CDN show the new picture straight away.
+          url = `${db.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+          if (!(await run(db.from("profiles").update({ avatar_url: url, updated_at: nowIso() }).eq("id", user.id)))) return false;
+        } else {
+          url = await blobToDataUrl(blob); // demo mode: kept in this browser only
+        }
+        update((s) => ((s.profile = { ...s.profile, avatarUrl: url }), s));
+        return true;
+      },
+
+      async removeAvatar() {
+        if (!requireMember()) return false;
+        if (member) {
+          await db.storage.from("avatars").remove([`${user.id}/avatar.jpg`]);
+          if (!(await run(db.from("profiles").update({ avatar_url: "", updated_at: nowIso() }).eq("id", user.id)))) return false;
+        }
+        update((s) => ((s.profile = { ...s.profile, avatarUrl: undefined }), s));
+        return true;
+      },
 
       async issueCertificate(course) {
         if (!requireMember()) return false;

@@ -64,7 +64,7 @@ export default async function AdminOverview() {
             The weekly availability is still the default. <Link href="/admin/bookings" className="font-semibold underline">Review and save it</Link> before launch.
           </Notice>
         ) : null}
-        {!emailConfigured() ? <Notice tone="info">Email notifications are off (set RESEND_API_KEY and EMAIL_FROM to enable them).</Notice> : null}
+        {!emailConfigured() ? <Notice tone="info">Email notifications are off. Set SMTP_HOST, SMTP_USER and SMTP_PASS (e.g. Gmail with an App Password) or RESEND_API_KEY to enable them.</Notice> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (

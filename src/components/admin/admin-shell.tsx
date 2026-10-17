@@ -6,6 +6,7 @@ import { BookOpen, CalendarDays, GraduationCap, HelpCircle, Inbox, LayoutDashboa
 import { localAdminLogout } from "@/app/actions/admin";
 import { useLearner } from "@/lib/learner/provider";
 import { LogoMark } from "@/components/layout/logo";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
 
@@ -30,6 +31,7 @@ export function AdminShell({ viewer, children }: { viewer: { name: string; role:
         <div className="flex items-center gap-2 px-5 py-5">
           <LogoMark className="size-9" onDark />
           <span className="text-sm font-bold text-white">BDIM Admin</span>
+          <ThemeToggle className="ml-auto border-white/20 text-white hover:bg-white/10" />
         </div>
         <nav aria-label="Admin">
           <ul className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0">

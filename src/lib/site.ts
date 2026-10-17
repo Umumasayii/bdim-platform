@@ -31,15 +31,16 @@ export const site = {
   logo: { full: "/brand/bdim-logo.png", mark: "/brand/bdim-mark.png" },
 };
 
-export const mainNav = [
-  { href: "/", label: "Home" },
+/** `secondary` items move into a "More" menu on mid-width desktops. */
+export const mainNav: { href: string; label: string; secondary?: boolean }[] = [
+  { href: "/", label: "Home", secondary: true },
   { href: "/courses", label: "Courses" },
   { href: "/learning-paths", label: "Learning Paths" },
   { href: "/practice", label: "Practice" },
   { href: "/questions", label: "Question Bank" },
   { href: "/coding-lab", label: "Coding Lab" },
   { href: "/live-training", label: "Live Training" },
-  { href: "/consulting", label: "Consulting" },
-  { href: "/about", label: "About Us" },
-  { href: "/contact", label: "Contact" },
+  { href: "/consulting", label: "Consulting", secondary: true },
+  { href: "/about", label: "About Us", secondary: true },
+  { href: "/contact", label: "Contact", secondary: true },
 ];

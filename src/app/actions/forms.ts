@@ -49,7 +49,11 @@ export async function submitInquiry(
   }
   const summary = `Reference: ${inquiry.reference}\nType: ${inquiry.kind}\nTopic: ${inquiry.serviceCategory || inquiry.courseSlug || "-"}\nFrom: ${inquiry.name} <${inquiry.email}>\nOrganization: ${inquiry.organization || "-"}\n\n${inquiry.description}`;
   const [staff, customer] = await Promise.all([
-    notifyStaff(`New inquiry ${inquiry.reference}`, summary),
+    notifyStaff(
+      `New inquiry ${inquiry.reference}: ${inquiry.serviceCategory || inquiry.courseSlug || inquiry.kind}`,
+      `${summary}\n\nManage it: ${siteUrl}/admin/inquiries`,
+      inquiry.email,
+    ),
     sendEmail(
       inquiry.email,
       `We received your request (${inquiry.reference})`,
@@ -139,7 +143,11 @@ export async function createBooking(
       `${service.title} — ${booking.status === "confirmed" ? "confirmed" : "request received"} (${booking.reference})`,
       `Hello ${booking.name},\n\n${statusLine}\n\nService: ${service.title}\nWhen: ${when}\nReference: ${booking.reference}\n\nManage or cancel: ${siteUrl}${manageUrl}\n\n— BDIM`,
     ),
-    notifyStaff(`New booking ${booking.reference}`, `${service.title}\n${when}\n${booking.name} <${booking.email}> ${booking.phone}\n\n${booking.notes}`),
+    notifyStaff(
+      `New booking ${booking.reference}: ${service.title}`,
+      `${service.title}\n${when}\nStatus: ${booking.status}\n\n${booking.name} <${booking.email}> ${booking.phone}\n${booking.organization}\n\n${booking.notes || "(no notes)"}\n\nConfirm or manage it: ${siteUrl}/admin/bookings`,
+      booking.email,
+    ),
   ]);
   return { ok: true, reference: booking.reference, status: booking.status, manageUrl, when, emailed: emailConfigured() && (customer || staff) };
 }
@@ -152,7 +160,12 @@ export async function cancelBookingByToken(token: string): Promise<{ ok: true } 
   if (new Date(booking.startsAt).getTime() < Date.now()) return { ok: false, message: "Past sessions can't be cancelled online." };
   const res = await store.updateBooking(booking.id, { status: "cancelled" });
   if (!res.ok) return { ok: false, message: res.message };
-  await notifyStaff(`Booking cancelled ${booking.reference}`, `${booking.name} cancelled ${booking.startsAt}`);
+  const settings = await store.getBookingSettings();
+  await notifyStaff(
+    `Booking cancelled ${booking.reference}`,
+    `${booking.name} cancelled the session on ${formatDateTime(booking.startsAt, settings.utcOffset)} (${settings.timeZoneLabel}).`,
+    booking.email,
+  );
   return { ok: true };
 }
 
@@ -178,7 +191,7 @@ export async function rescheduleBookingByToken(token: string, startsAt: string):
   if (!res.ok) return { ok: false, message: res.message };
   const when = `${formatDateTime(slot.startsAt, settings.utcOffset)} (${settings.timeZoneLabel})`;
   await Promise.all([
-    notifyStaff(`Booking rescheduled ${booking.reference}`, `${booking.name} moved to ${when}`),
+    notifyStaff(`Booking rescheduled ${booking.reference}`, `${booking.name} moved their session to ${when}.\n\n${siteUrl}/admin/bookings`, booking.email),
     sendEmail(booking.email, `Booking ${booking.reference} rescheduled`, `Your session has been moved to ${when}. Status: ${res.booking.status}.`),
   ]);
   return { ok: true, when };

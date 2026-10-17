@@ -114,7 +114,7 @@ The local admin only works when Supabase is **not** configured. It sets a signed
 | Integration | Variables | Without it |
 |---|---|---|
 | Supabase: database, auth, storage | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Demo mode: local data file and browser-held progress |
-| Email notifications (Resend) | `RESEND_API_KEY`, `EMAIL_FROM`, `BDIM_NOTIFICATION_EMAIL` | No emails are sent. Confirmation screens say so and show the reference number. |
+| Email notifications | **Gmail/SMTP:** `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (App Password), or **Resend:** `RESEND_API_KEY`; plus optional `EMAIL_FROM`, `BDIM_NOTIFICATION_EMAIL` | No emails are sent. Confirmation screens say so and show the reference number. |
 | Payments | *Not implemented.* `NEXT_PUBLIC_PAYMENTS_ENABLED` is reserved | Pricing is quote-based, as requested |
 | Coding Lab runtimes | None. Loaded from public CDNs (Pyodide 314, sql.js 1.15, webR 0.6) | The lab needs internet access on first use |
 
@@ -136,13 +136,15 @@ The local admin only works when Supabase is **not** configured. It sets a signed
 | Enrollment (self-enroll or approval), lessons, notes, bookmarks | ✅ verified (browser storage) | ✅ verified live (RLS) |
 | Quizzes graded on the server (answer keys never sent to the browser) | ✅ verified (Server Action) | ✅ `submit_quiz()` database function |
 | Certificates issued only when requirements are met | ✅ verified, watermarked "Demonstration" | ✅ `issue_certificate()` checks progress in the database; public verification page |
+| Profile pictures (cropped in the browser, stored in a public `avatars` bucket; users can only write their own folder) | Kept in this browser | ✅ verified live |
+| Light / dark mode toggle (remembers the choice, follows the device by default) | ✅ | ✅ |
 | Assignments, portfolio, profile, streaks, learner dashboard | ✅ verified | ✅ implemented |
 | Downloadable materials | Public links only | ✅ private bucket with signed URLs |
 | Bookings: availability, conflict prevention, reschedule and cancel by private link | ✅ verified (file store) | ✅ database exclusion constraint |
 | Inquiries (contact, course, consulting, training) with consent and honeypot | ✅ verified | ✅ |
 | Admin: courses, lessons, quizzes, questions, paths, instructors, testimonials, bookings, schedule, inquiries | ✅ verified | ✅ RLS staff policies |
 | Admin: approve enrollments, review assignments, engagement stats | Notice (needs accounts) | ✅ implemented |
-| Email notifications | Off, stated honestly | Needs Resend |
+| Email notifications (branded HTML + text) | Off until configured | Gmail SMTP or Resend |
 | Online payments | Not built (quote-based pricing) | — |
 
 **Verified** means exercised in a browser during development: page loads on every route, form validation and submission, booking with conflict checks plus reschedule and cancel, quiz grading, certificate gating, admin sign-in and edits reaching public pages, real Python/SQL/R execution, and layout at 375px phone width.

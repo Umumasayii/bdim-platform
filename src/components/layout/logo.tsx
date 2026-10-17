@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 */
 export function LogoMark({ className, onDark = false }: { className?: string; onDark?: boolean }) {
   return (
-    <span className={cn("relative inline-grid size-10 shrink-0 place-items-center", onDark && "rounded-xl bg-white p-1", className)}>
+    <span className={cn("relative inline-grid size-10 shrink-0 place-items-center", onDark ? "rounded-xl bg-white p-1" : "dark:rounded-xl dark:bg-white dark:p-1", className)}>
       <Image src="/brand/bdim-mark-128.png" alt="" width={128} height={128} className="size-full object-contain" priority />
     </span>
   );
@@ -18,7 +18,7 @@ export function LogoMark({ className, onDark = false }: { className?: string; on
 
 export function Wordmark({ inverted = false, className }: { inverted?: boolean; className?: string }) {
   return (
-    <span className={cn("leading-none", className)}>
+    <span className={cn("whitespace-nowrap leading-none", className)}>
       <span className={cn("block text-[16px] font-extrabold tracking-tight", inverted ? "text-white" : "text-navy-900")}>
         Big Data <span className={inverted ? "text-leaf-400" : "text-leaf-600"}>IQ</span> Minds
       </span>

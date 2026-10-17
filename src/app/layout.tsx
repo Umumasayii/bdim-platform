@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { LearnerProvider } from "@/lib/learner/provider";
+import { themeInitScript } from "@/lib/theme";
 import { siteUrl } from "@/lib/config";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -33,7 +34,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${mono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Apply the saved light/dark theme before first paint (no flash). */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="flex min-h-dvh flex-col">
         <LearnerProvider>{children}</LearnerProvider>
       </body>

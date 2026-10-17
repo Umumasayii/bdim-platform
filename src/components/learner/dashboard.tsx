@@ -7,6 +7,7 @@ import type { Course, Question } from "@/lib/types";
 import { useLearner } from "@/lib/learner/provider";
 import { computeStreak } from "@/lib/learner/types";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { Avatar } from "@/components/layout/avatar";
 import { ProgressBar } from "@/components/ui/card";
 import { Field, Input, Textarea, Select } from "@/components/ui/field";
 import { EmptyState } from "@/components/ui/layout";
@@ -29,7 +30,12 @@ const tabs: { id: Tab; label: string; icon: typeof BookOpen }[] = [
 export function LearnerDashboard({ courses, questions }: { courses: Course[]; questions: Question[] }) {
   const learner = useLearner();
   const { ready, mode, state } = learner;
-  const [tab, setTab] = useState<Tab>("overview");
+  // Opening /dashboard?tab=profile (from the account menu) selects that tab.
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "overview";
+    const t = new URLSearchParams(window.location.search).get("tab");
+    return tabs.some((x) => x.id === t) ? (t as Tab) : "overview";
+  });
 
   if (!ready) return <div className="h-96 animate-pulse rounded-2xl bg-surface-2" />;
   if (mode === "guest") {
@@ -407,11 +413,69 @@ function Portfolio({ courses }: { courses: Course[] }) {
   );
 }
 
+function AvatarEditor() {
+  const { state, user, uploadAvatar, removeAvatar } = useLearner();
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const name = state.profile.fullName || user?.email || "You";
+  return (
+    <section className="flex max-w-xl flex-wrap items-center gap-5 rounded-2xl border border-line bg-white p-6" aria-labelledby="photo-heading">
+      <Avatar src={state.profile.avatarUrl} name={name} className="size-20 text-xl" />
+      <div className="min-w-0 flex-1">
+        <h2 id="photo-heading" className="font-bold text-navy-950">
+          Profile picture
+        </h2>
+        <p className="mt-0.5 text-sm text-muted">JPG, PNG or WebP. It is cropped to a square and shown next to your name.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label className={`${busy ? "pointer-events-none opacity-60" : ""} inline-flex h-9 cursor-pointer items-center rounded-xl bg-teal-600 px-3.5 text-sm font-semibold text-white hover:bg-teal-700 focus-within:ring-2 focus-within:ring-teal-300`}>
+            {busy ? "Uploading…" : state.profile.avatarUrl ? "Change photo" : "Upload photo"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={busy}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setBusy(true);
+                setStatus((await uploadAvatar(file)) ? "Photo updated." : null);
+                setBusy(false);
+              }}
+            />
+          </label>
+          {state.profile.avatarUrl ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setStatus((await removeAvatar()) ? "Photo removed." : null);
+                setBusy(false);
+              }}
+            >
+              Remove
+            </Button>
+          ) : null}
+          {status ? (
+            <span role="status" className="text-sm text-leaf-700">
+              {status}
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ProfileForm() {
   const { state, updateProfile, user, mode } = useLearner();
   const [profile, setProfile] = useState(state.profile);
   const [status, setStatus] = useState<string | null>(null);
   return (
+    <div className="grid gap-6">
+    <AvatarEditor />
     <form
       className="grid max-w-xl gap-4 rounded-2xl border border-line bg-white p-6"
       onSubmit={async (e) => {
@@ -459,5 +523,6 @@ function ProfileForm() {
         ) : null}
       </div>
     </form>
+    </div>
   );
 }

@@ -7,6 +7,7 @@ import { StreamLanguage } from "@codemirror/language";
 import { r } from "@codemirror/legacy-modes/mode/r";
 import { EditorView } from "@codemirror/view";
 import type { LabLanguage } from "@/lib/types";
+import { useIsDark } from "@/components/layout/theme-toggle";
 
 const languages = {
   python: () => python(),
@@ -14,14 +15,24 @@ const languages = {
   r: () => StreamLanguage.define(r),
 };
 
-const theme = EditorView.theme({
+const base = {
   "&": { fontSize: "13.5px", height: "100%" },
   ".cm-content": { fontFamily: "var(--font-mono)", padding: "12px 0" },
-  ".cm-gutters": { backgroundColor: "#f5f7fa", borderRight: "1px solid #e2e7ee", color: "#7a879b" },
-  ".cm-activeLine": { backgroundColor: "rgb(21 154 148 / 0.06)" },
-  ".cm-activeLineGutter": { backgroundColor: "rgb(21 154 148 / 0.1)" },
   "&.cm-focused": { outline: "none" },
+};
+const lightTheme = EditorView.theme({
+  ...base,
+  ".cm-gutters": { backgroundColor: "#f5f7fa", borderRight: "1px solid #e2e7ee", color: "#7a879b" },
+  ".cm-activeLine": { backgroundColor: "rgb(6 147 134 / 0.06)" },
+  ".cm-activeLineGutter": { backgroundColor: "rgb(6 147 134 / 0.1)" },
 });
+const darkTheme = EditorView.theme({
+  ...base,
+  "&": { ...base["&"], backgroundColor: "#0b1a30" },
+  ".cm-gutters": { backgroundColor: "#0c1a30", borderRight: "1px solid #223a5e", color: "#6f86a6" },
+  ".cm-activeLine": { backgroundColor: "rgb(85 198 184 / 0.08)" },
+  ".cm-activeLineGutter": { backgroundColor: "rgb(85 198 184 / 0.12)" },
+}, { dark: true });
 
 export default function CodeEditor({
   value,
@@ -36,6 +47,7 @@ export default function CodeEditor({
   label: string;
   onRun?: () => void;
 }) {
+  const dark = useIsDark();
   return (
     <CodeMirror
       value={value}
@@ -45,7 +57,7 @@ export default function CodeEditor({
       aria-label={label}
       extensions={[
         languages[language](),
-        theme,
+        dark ? darkTheme : lightTheme,
         EditorView.lineWrapping,
         EditorView.domEventHandlers({
           keydown: (e) => {
@@ -58,6 +70,7 @@ export default function CodeEditor({
           },
         }),
       ]}
+      theme={dark ? "dark" : "light"}
       basicSetup={{ highlightActiveLine: true, foldGutter: false, autocompletion: true }}
       className="h-full"
     />
