@@ -1,36 +1,186 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Big Data IQ Minds — learning platform
 
-## Getting Started
+The website and learning platform for **BDIM Ltd (Big Data IQ Mind Ltd)**, public brand **Big Data IQ Minds** —
+*We Turn Data Into Decisions. · Data • Insights • Impact.*
 
-First, run the development server:
+It includes a course catalogue, learning paths, a free practice zone, a question bank, a browser-based coding lab (Python, SQL, R and Excel formulas), a learning management system, bookings for live sessions, consulting inquiries, and a protected admin area.
+
+> **Status:** The application works end to end in **demo mode**, which needs no external services. **Production mode** (Supabase accounts and database) is fully implemented, but has not yet been tested against a live Supabase project. See [Implemented vs. awaiting configuration](#implemented-vs-awaiting-configuration).
+
+---
+
+## Quick start (local development)
+
+Requirements: **Node.js 20.9 or newer** (developed on Node 24 LTS).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local      # then edit .env.local
+npm run dev                      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+With no Supabase values in `.env.local`, the site runs in **demo mode**:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Content (courses, questions, paths…) is read from `src/content/`. Admin edits, bookings and inquiries are written to `.data/bdim-db.json`, which is git-ignored.
+- Learner progress (enrollments, lessons, notes, quizzes, certificates) is saved **in each visitor's browser**. A banner says so.
+- Certificates are watermarked **"Demonstration only"**.
+- The admin area uses a local password (see below).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Local admin access
 
-## Learn More
+Set both values in `.env.local`, then sign in at `/admin/login`:
 
-To learn more about Next.js, take a look at the following resources:
+```
+LOCAL_ADMIN_PASSWORD=<8+ characters>
+ADMIN_SESSION_SECRET=<32+ random characters, e.g. from: openssl rand -hex 32>
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The local admin only works when Supabase is **not** configured. It sets a signed, `httpOnly` cookie that lasts 8 hours. In production, use Supabase staff accounts instead.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Useful scripts
 
-## Deploy on Vercel
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run lint` | ESLint (Next.js + React Compiler rules) |
+| `npm run typecheck` | Generate route types and run `tsc` |
+| `npm test` | Unit tests: formula engine, booking slots and conflicts, data integrity, validation, answer-key protection |
+| `npm run check` | Lint + typecheck + tests |
+| `npm run seed:supabase` | Load the starter content into a Supabase project |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Production setup with Supabase
+
+1. **Create a Supabase project** at supabase.com.
+2. **Apply the schema.** Run `supabase/migrations/20261017000000_init.sql` in the SQL editor, or use `supabase db push` with the Supabase CLI. It creates the tables, row-level security policies, the database functions (quiz grading, certificate issuing, availability, certificate verification) and a private `course-materials` storage bucket.
+3. **Set the environment variables** (in `.env.local`, or in your host's settings):
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...      # server-only, never expose it
+   NEXT_PUBLIC_SITE_URL=https://your-domain
+   ```
+4. **Seed the content:** `npm run seed:supabase`. This is safe to re-run, because it upserts by id.
+5. **Configure Auth** (Supabase → Authentication → URL configuration):
+   - Site URL: your domain.
+   - Redirect URLs: `https://your-domain/auth/callback`, plus `http://localhost:3000/auth/callback` for development.
+   - Configure a custom SMTP sender so confirmation and reset emails come from BDIM.
+6. **Create the first administrator.** Sign up on the site, then run this in the Supabase SQL editor as the database owner:
+   ```sql
+   insert into public.staff_roles (user_id, role)
+   select id, 'admin' from auth.users where email = 'admin@your-domain';
+   ```
+   For instructors, use `'instructor'`. They can edit courses, questions and paths, approve enrollments and review assignments, but cannot manage bookings, inquiries, instructor profiles or testimonials. **Public sign-up never grants staff access.**
+7. **Review in `/admin`:** the instructor profile, the booking schedule (it starts as an unreviewed default), and all sample content.
+
+---
+
+## Deployment
+
+**Recommended:** deploy on **Vercel** (or any Node host) with **Supabase**.
+
+1. Push the `bdim-platform` folder to a Git repository and import it in Vercel.
+2. Add the environment variables from `.env.example`. Leave `LOCAL_ADMIN_*` empty.
+3. Deploy. The build runs `next build`; 139 pages are prerendered and dynamic sections stream at request time.
+
+**Self-hosting on one server** (`npm run build && npm start`) also works in demo mode, because the server can write `.data/`. Serverless hosts such as Vercel have a read-only file system, so demo-mode writes (bookings, inquiries, admin edits) fail there **with a clear error message**. Use Supabase on serverless hosts.
+
+---
+
+## Replacing demo content with verified BDIM information
+
+| What | Where |
+|---|---|
+| **Logo** | Put the file in `public/brand/` and set `NEXT_PUBLIC_LOGO_URL=/brand/<file>`. The current mark is a placeholder. Brand colours are tokens at the top of `src/app/globals.css`; adjust them to match the official logo. |
+| **Instructor profile and photo** | `/admin/instructors`. Only the name *Niyobyose Brancal* is filled in. Bio, expertise, interests and links are deliberately empty until verified. |
+| **Contact details** | `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_CONTACT_PHONE`, `NEXT_PUBLIC_CONTACT_WHATSAPP`. Company text lives in `src/lib/site.ts`. |
+| **Courses, lessons, quizzes, assignments** | `/admin/courses`. 30 courses ship with 170 outlined lessons; 17 lessons have full sample content (13 are free previews), and the others show an honest "materials in preparation" notice. |
+| **Practice questions** | `/admin/questions`. All 38 are original and labelled *Sample content*. |
+| **Learning paths** | `/admin/paths`. The seven homepage career goals are in `src/content/paths.ts`. |
+| **Booking schedule and services** | `/admin/bookings`. Set real hours, services and pricing notes. |
+| **Testimonials** | `/admin/testimonials`. None exist. The homepage section stays hidden until a **verified** testimonial is published (the database enforces this). |
+| **Portfolio projects** | `src/content/projects.ts`. All are labelled *Example* and use synthetic data. |
+| **Consulting services and FAQ** | `src/content/services.ts`, `src/content/faqs.ts` |
+| **Privacy policy and terms** | `src/app/(site)/privacy` and `terms`. These are **templates** with `[placeholders]`; have them reviewed (Rwanda: Law No. 058/2021 on personal data protection) before launch. |
+| **Prices** | Every course shows *Request a quote*. To publish a price, switch a course to "Fixed price" in the course editor. |
+
+---
+
+## Integrations requiring credentials
+
+| Integration | Variables | Without it |
+|---|---|---|
+| Supabase: database, auth, storage | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | Demo mode: local data file and browser-held progress |
+| Email notifications (Resend) | `RESEND_API_KEY`, `EMAIL_FROM`, `BDIM_NOTIFICATION_EMAIL` | No emails are sent. Confirmation screens say so and show the reference number. |
+| Payments | *Not implemented.* `NEXT_PUBLIC_PAYMENTS_ENABLED` is reserved | Pricing is quote-based, as requested |
+| Coding Lab runtimes | None. Loaded from public CDNs (Pyodide 314, sql.js 1.15, webR 0.6) | The lab needs internet access on first use |
+
+---
+
+## Implemented vs. awaiting configuration
+
+| Feature | Demo mode | With Supabase |
+|---|---|---|
+| Public site, navigation, SEO (metadata, Open Graph image, sitemap, robots, JSON-LD) | ✅ verified | ✅ |
+| Course catalogue with search and filters, course pages, quote requests | ✅ verified | ✅ |
+| Interactive hero analysis demo, career-path roadmap selector | ✅ verified | ✅ |
+| Learning paths with progress | ✅ verified | ✅ |
+| Question bank: search, filters, save, complete, attempts, hints, solutions | ✅ verified (browser storage) | ✅ stored per account (RLS) |
+| Excel formula practice (real evaluation) | ✅ verified | ✅ |
+| Coding Lab: Python, SQL and R execute in the browser, with output checks | ✅ verified | ✅ |
+| Question discussions | Hidden ("open once accounts are enabled") | ✅ implemented, not yet tested live |
+| Accounts: sign-up, sign-in, password reset | Explains demo mode | ✅ implemented, not yet tested live |
+| Enrollment (self-enroll or approval), lessons, notes, bookmarks | ✅ verified (browser storage) | ✅ implemented (RLS), not yet tested live |
+| Quizzes graded on the server (answer keys never sent to the browser) | ✅ verified (Server Action) | ✅ `submit_quiz()` database function |
+| Certificates issued only when requirements are met | ✅ verified, watermarked "Demonstration" | ✅ `issue_certificate()` checks progress in the database; public verification page |
+| Assignments, portfolio, profile, streaks, learner dashboard | ✅ verified | ✅ implemented |
+| Downloadable materials | Public links only | ✅ private bucket with signed URLs |
+| Bookings: availability, conflict prevention, reschedule and cancel by private link | ✅ verified (file store) | ✅ database exclusion constraint |
+| Inquiries (contact, course, consulting, training) with consent and honeypot | ✅ verified | ✅ |
+| Admin: courses, lessons, quizzes, questions, paths, instructors, testimonials, bookings, schedule, inquiries | ✅ verified | ✅ RLS staff policies |
+| Admin: approve enrollments, review assignments, engagement stats | Notice (needs accounts) | ✅ implemented |
+| Email notifications | Off, stated honestly | Needs Resend |
+| Online payments | Not built (quote-based pricing) | — |
+
+**Verified** means exercised in a browser during development: page loads on every route, form validation and submission, booking with conflict checks plus reschedule and cancel, quiz grading, certificate gating, admin sign-in and edits reaching public pages, real Python/SQL/R execution, and layout at 375px phone width.
+
+---
+
+## Architecture
+
+- **Next.js 16** (App Router, Cache Components, Partial Prefetching), **React 19**, **TypeScript**, **Tailwind CSS 4**
+- **Supabase** (`@supabase/ssr`) for Postgres, auth and storage; **Zod** for validation; **React Hook Form** for complex forms; **Recharts** for charts; **CodeMirror 6** for the editor
+- **Data layer** (`src/lib/data/`): one `Store` interface with two implementations, `local-store.ts` (JSON file) and `supabase-store.ts`. Public reads are cached with `"use cache"` and tags, and admin saves invalidate them with `updateTag()`.
+- **Learner state** (`src/lib/learner/provider.tsx`): one client API that stores data in the browser (demo) or in Supabase (members).
+- **Code execution** (`src/lib/runners/`, `public/workers/`): WebAssembly runtimes in Web Workers inside the learner's browser, with load and run time limits enforced by terminating the worker. **No user code ever runs on the server.** To add a server-side sandbox later, implement the `CodeRunner` interface.
+
+```
+src/
+  app/(site)/        public pages (home, courses, learn, practice, questions, coding-lab, …)
+  app/admin/         admin login + protected admin pages
+  app/actions/       Server Actions (forms, learning, admin) — each validates and authorises
+  components/        ui/, layout/, home/, courses/, practice/, lab/, learner/, booking/, forms/, admin/
+  content/           seed content (courses, lessons, questions, paths, exercises, datasets, services)
+  lib/               data layer, auth, Supabase clients, validation, booking slots, formula engine, runners
+supabase/migrations/ database schema, RLS policies and functions
+scripts/             seed script
+tests/               unit tests
+```
+
+## Security notes
+
+- Every admin **page** and every admin **Server Action** checks authorisation on the server. With Supabase, row-level security enforces it again in the database. A hidden button is never the only protection.
+- The service-role key is only used server-side (`server-only` module), for public bookings and inquiries after validation.
+- Quiz answer keys and locked lesson bodies are never sent to the browser. In demo mode, locked-lesson gating happens in the browser because there are no accounts.
+- Forms use Zod validation, a honeypot field and in-memory rate limiting. For stronger protection in production, add a shared rate-limit store or a WAF.
+- Security headers are set in `next.config.ts`. A Content Security Policy is **not yet configured**: the Coding Lab loads runtimes from CDNs and webR uses dynamic `import()`. Add a CSP that allows `cdn.jsdelivr.net`, `webr.r-wasm.org` and `'wasm-unsafe-eval'` when hardening.
+
+## Suggested next steps
+
+1. Connect a Supabase project and run through sign-up, enrollment, quizzes and certificates on a staging URL.
+2. Add the official logo, instructor photo and verified biography, and the real contact details.
+3. Review the booking schedule, the legal templates and the sample content.
+4. Configure Resend for email notifications.
+5. Commission a manual accessibility audit (keyboard and screen reader) before public launch.

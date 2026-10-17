@@ -1,0 +1,185 @@
+import type { BookableService, BookingSettings, ConsultingService } from "@/lib/types";
+
+export const consultingServices: ConsultingService[] = [
+  {
+    slug: "data-analysis",
+    title: "Data Analysis & Interpretation",
+    summary: "Turn existing data into clear findings, tables and recommendations.",
+    description:
+      "We analyse your programme, business or research data and explain what it means for your decisions — with transparent methods and plain-language reporting.",
+    deliverables: ["Analysis plan agreed with you", "Cleaned analysis dataset", "Tables and charts", "Findings report or briefing"],
+    methods: ["Descriptive and inferential statistics", "Trend and variance analysis", "Disaggregation by key groups"],
+    tools: ["R", "Python", "STATA", "Excel"],
+    idealFor: ["NGOs and programmes", "Businesses", "Public institutions"],
+  },
+  {
+    slug: "statistical-consulting",
+    title: "Statistical Consulting",
+    summary: "Expert support on study design, sampling, models and interpretation.",
+    description:
+      "Get statistical advice when you need it: sample size calculations, model choice, reviewing an analysis, or answering reviewer comments.",
+    deliverables: ["Sample size and sampling plan", "Model specification and review", "Technical notes", "Advisory sessions"],
+    methods: ["Sampling design", "Regression modelling", "Survey statistics", "Impact evaluation methods"],
+    tools: ["R", "STATA", "SPSS", "Python"],
+    idealFor: ["Researchers and students", "Evaluation teams", "Research institutions"],
+  },
+  {
+    slug: "survey-design-data-collection",
+    title: "Survey Design & Digital Data Collection",
+    summary: "Questionnaires, XLSForms and field systems that produce clean data.",
+    description:
+      "From instrument design to deployment: we design or review questionnaires, program digital forms, set up servers and support enumerator training.",
+    deliverables: ["Questionnaire design or review", "XLSForm programming and testing", "Enumerator training materials", "Field monitoring setup"],
+    methods: ["Cognitive pre-testing", "Skip logic and validation", "Back-check design"],
+    tools: ["KoBoToolbox", "SurveyCTO", "ODK"],
+    idealFor: ["Survey firms", "NGOs", "Research projects", "Government programmes"],
+  },
+  {
+    slug: "data-cleaning-quality",
+    title: "Data Cleaning & Quality Assurance",
+    summary: "Reliable, documented datasets ready for analysis.",
+    description:
+      "We clean and validate your datasets with reproducible code and a full cleaning log, so every change can be audited.",
+    deliverables: ["Data quality assessment", "Reproducible cleaning scripts", "Cleaning log and data dictionary", "Analysis-ready dataset"],
+    methods: ["Validation rules", "Duplicate and outlier detection", "Consistency checks", "Missing data treatment"],
+    tools: ["R", "Python", "STATA", "Power Query"],
+    idealFor: ["Any organization with survey or administrative data"],
+  },
+  {
+    slug: "bi-dashboards",
+    title: "Business Intelligence Dashboards",
+    summary: "KPI frameworks and Power BI dashboards that management uses.",
+    description:
+      "We work with your team to define indicators, model your data and build dashboards that are maintained and refreshed reliably.",
+    deliverables: ["KPI framework", "Data model", "Power BI or Excel dashboard", "Handover and staff training"],
+    methods: ["Stakeholder requirements workshops", "Star-schema modelling", "DAX measures", "Refresh automation"],
+    tools: ["Power BI", "Excel", "SQL"],
+    idealFor: ["Businesses", "NGO country offices", "Public agencies"],
+  },
+  {
+    slug: "gis-geospatial",
+    title: "GIS & Geospatial Analysis",
+    summary: "Maps and spatial analysis for planning and targeting.",
+    description:
+      "We map services, populations and resources, and analyse access, coverage and suitability to support planning decisions.",
+    deliverables: ["Thematic maps", "Accessibility and coverage analysis", "Spatial database", "Web map or dashboard"],
+    methods: ["Buffer and overlay analysis", "Hotspot analysis", "Suitability modelling", "Zonal statistics"],
+    tools: ["ArcGIS Pro", "QGIS", "Python (geopandas)"],
+    idealFor: ["Agriculture and environment projects", "Health programmes", "Planning authorities"],
+  },
+  {
+    slug: "machine-learning-predictive",
+    title: "Machine Learning & Predictive Analytics",
+    summary: "Forecasts, risk scores and segmentation built and validated properly.",
+    description:
+      "We develop predictive models that support specific decisions — and we validate them honestly, document their limits and help you monitor them.",
+    deliverables: ["Problem framing and success metrics", "Validated model", "Model documentation", "Deployment and monitoring guidance"],
+    methods: ["Supervised learning", "Time-series forecasting", "Clustering", "Fairness and subgroup checks"],
+    tools: ["Python", "scikit-learn", "R"],
+    idealFor: ["Financial institutions", "Businesses", "Programmes using targeting"],
+  },
+  {
+    slug: "research-support",
+    title: "Research Support & Reporting",
+    summary: "Support from proposal to final report.",
+    description:
+      "We support research teams with methodology, analysis and clear reporting, including tables and figures to publication standard.",
+    deliverables: ["Methodology sections", "Analysis and results chapters", "Tables and figures", "Policy briefs"],
+    methods: ["Quantitative research design", "Survey analysis", "Regression", "Mixed-methods support"],
+    tools: ["R", "STATA", "SPSS", "Quarto"],
+    idealFor: ["Universities", "Think tanks", "Evaluation teams", "Postgraduate researchers"],
+  },
+  {
+    slug: "custom-training",
+    title: "Customised Professional Training",
+    summary: "Training designed around your team, your data and your tools.",
+    description:
+      "We design training for your organization's needs — using your own (anonymised) data where appropriate — delivered online or in person.",
+    deliverables: ["Training needs assessment", "Custom curriculum and materials", "Hands-on sessions", "Follow-up support"],
+    methods: ["Practical, project-based learning", "Pre- and post-training assessment"],
+    tools: ["Any of BDIM's course tools"],
+    idealFor: ["Universities", "NGOs", "Government institutions", "Research teams", "Private companies"],
+  },
+];
+
+export const seedBookableServices: BookableService[] = [
+  {
+    id: "individual-tutoring",
+    title: "Individual tutoring",
+    description: "One-to-one help with a course topic, assignment or tool.",
+    durationMinutes: 60,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Pricing on request",
+    active: true,
+    mode: "Online or in person",
+  },
+  {
+    id: "mock-technical-interview",
+    title: "Mock technical interview",
+    description: "Practise a data analyst or data science interview with feedback on technical depth and communication.",
+    durationMinutes: 60,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Pricing on request",
+    active: true,
+    mode: "Online",
+  },
+  {
+    id: "statistical-consulting-session",
+    title: "Statistical consulting session",
+    description: "Discuss study design, sample size, models or interpretation with a statistician.",
+    durationMinutes: 60,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Pricing on request",
+    active: true,
+    mode: "Online or in person",
+  },
+  {
+    id: "data-science-mentorship",
+    title: "Data science mentorship",
+    description: "Career and project guidance for aspiring analysts and data scientists.",
+    durationMinutes: 45,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Pricing on request",
+    active: true,
+    mode: "Online",
+  },
+  {
+    id: "corporate-training-consultation",
+    title: "Corporate training consultation",
+    description: "Scope a customised training programme for your team.",
+    durationMinutes: 30,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Free initial consultation — confirm with BDIM",
+    active: true,
+    mode: "Online or in person",
+  },
+  {
+    id: "research-analytics-support",
+    title: "Research & analytics support",
+    description: "Work through your data, analysis or report with an analyst.",
+    durationMinutes: 90,
+    instructorId: "niyobyose-brancal",
+    pricingNote: "Pricing on request",
+    active: true,
+    mode: "Online or in person",
+  },
+];
+
+/** Default schedule — BDIM must review it in /admin/bookings before launch. */
+export const seedBookingSettings: BookingSettings = {
+  enabled: true,
+  utcOffset: "+02:00",
+  timeZoneLabel: "Kigali time (CAT, UTC+2)",
+  weekly: {
+    "1": [{ start: "09:00", end: "12:00" }, { start: "14:00", end: "17:00" }],
+    "2": [{ start: "09:00", end: "12:00" }, { start: "14:00", end: "17:00" }],
+    "3": [{ start: "09:00", end: "12:00" }, { start: "14:00", end: "17:00" }],
+    "4": [{ start: "09:00", end: "12:00" }, { start: "14:00", end: "17:00" }],
+    "5": [{ start: "09:00", end: "12:00" }],
+  },
+  blackoutDates: [],
+  leadTimeHours: 24,
+  horizonDays: 21,
+  autoConfirm: false,
+  reviewed: false,
+};
