@@ -1,57 +1,65 @@
 @import "tailwindcss";
 
 /*
-  BDIM design tokens. Navy is the primary brand colour; teal and green are
-  secondary. If the official logo uses different values, change them here —
-  every component reads from these tokens.
+  BDIM design tokens, matched to the official logo (public/brand/bdim-logo.png):
+    navy  #052553 (logo "B" and wordmark)   azure #1985C9 (logo highlight)
+    teal  #069386 (chart bars)              green #17AB59 ("IQ", swoosh)
+  The pure logo teal/green/azure are used for fills and accents; text and
+  buttons use the deeper 600/700 shades so they meet WCAG AA contrast.
 */
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono-code), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-navy-50: #eef3fa;
-  --color-navy-100: #d8e3f2;
-  --color-navy-200: #b0c6e4;
-  --color-navy-300: #7e9fcf;
-  --color-navy-400: #4e76b4;
-  --color-navy-500: #2f5895;
-  --color-navy-600: #1f4276;
-  --color-navy-700: #17335d;
-  --color-navy-800: #102545;
-  --color-navy-900: #0b1b33;
-  --color-navy-950: #071224;
+  --color-navy-50: #edf3fb;
+  --color-navy-100: #d4e2f4;
+  --color-navy-200: #a9c4e8;
+  --color-navy-300: #739fd6;
+  --color-navy-400: #3b74bd;
+  --color-navy-500: #1d56a0;
+  --color-navy-600: #124385;
+  --color-navy-700: #0b3672;
+  --color-navy-800: #072b5f;
+  --color-navy-900: #052553;
+  --color-navy-950: #03183a;
 
-  --color-teal-50: #ecfbfa;
-  --color-teal-100: #cdf3f0;
-  --color-teal-200: #9de6e1;
-  --color-teal-300: #62d2cb;
-  --color-teal-400: #2fb7b0;
-  --color-teal-500: #159a94;
-  --color-teal-600: #0d7c78;
-  --color-teal-700: #0e6361;
-  --color-teal-800: #104f4e;
-  --color-teal-900: #0f4241;
+  --color-azure-300: #6fb7e6;
+  --color-azure-400: #3a9bd9;
+  --color-azure-500: #1985c9;
+  --color-azure-600: #1570b0;
+  --color-azure-700: #125c91;
 
-  --color-leaf-50: #effaf2;
-  --color-leaf-100: #d6f2de;
-  --color-leaf-200: #ace4be;
-  --color-leaf-300: #78cf96;
-  --color-leaf-400: #46b46d;
-  --color-leaf-500: #279853;
-  --color-leaf-600: #1b7a42;
-  --color-leaf-700: #186137;
-  --color-leaf-800: #164d2f;
-  --color-leaf-900: #133f28;
+  --color-teal-50: #e9f8f6;
+  --color-teal-100: #c8eee9;
+  --color-teal-200: #93ddd3;
+  --color-teal-300: #55c6b8;
+  --color-teal-400: #21ad9c;
+  --color-teal-500: #069386;
+  --color-teal-600: #077a70;
+  --color-teal-700: #06655d;
+  --color-teal-800: #08514b;
+  --color-teal-900: #0a433e;
+
+  --color-leaf-50: #ebf9f0;
+  --color-leaf-100: #ccf0da;
+  --color-leaf-200: #9ae0b5;
+  --color-leaf-300: #62cc8c;
+  --color-leaf-400: #3cbf71;
+  --color-leaf-500: #17ab59;
+  --color-leaf-600: #128f4a;
+  --color-leaf-700: #0f7a3e;
+  --color-leaf-800: #0f6133;
+  --color-leaf-900: #0d4f2b;
 
   --color-surface: #f5f7fa;
   --color-surface-2: #eef1f5;
   --color-line: #e2e7ee;
-  --color-ink: #0b1b33;
-  --color-muted: #52617a;
+  --color-ink: #061d42;
+  --color-muted: #4d5f7a;
 
   --radius-card: 1rem;
-  --shadow-card: 0 1px 2px rgb(11 27 51 / 0.04), 0 4px 16px -6px rgb(11 27 51 / 0.08);
-  --shadow-lift: 0 2px 4px rgb(11 27 51 / 0.05), 0 16px 32px -12px rgb(11 27 51 / 0.18);
+  --shadow-card: 0 1px 2px rgb(5 37 83 / 0.04), 0 4px 16px -6px rgb(5 37 83 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(5 37 83 / 0.05), 0 16px 32px -12px rgb(5 37 83 / 0.18);
 }
 
 @layer base {
@@ -104,7 +112,7 @@
 
 /* Subtle dotted grid used behind technical sections */
 .bg-grid {
-  background-image: radial-gradient(rgb(11 27 51 / 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(rgb(5 37 83 / 0.08) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 

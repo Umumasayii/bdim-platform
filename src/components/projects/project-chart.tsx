@@ -3,7 +3,8 @@
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { PortfolioProject } from "@/lib/types";
 
-const palette = ["#159a94", "#102545", "#279853", "#4e76b4"];
+// Logo palette: teal, navy, green, azure
+const palette = ["#069386", "#052553", "#17ab59", "#1985c9"];
 
 export function ProjectChart({ chart }: { chart: PortfolioProject["chart"] }) {
   const common = { data: chart.data, margin: { top: 10, right: 10, left: -10, bottom: 0 } };

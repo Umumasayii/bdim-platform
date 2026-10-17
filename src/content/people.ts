@@ -1,18 +1,22 @@
 import type { InstructorProfile, Testimonial } from "@/lib/types";
 
-// Only the instructor's name is confirmed. All other fields are intentionally
-// empty and must be filled in with verified information from /admin/instructors.
+// Profile supplied and verified by the instructor (October 2026).
+// Edit from /admin/instructors; keep every claim accurate.
 export const seedInstructors: InstructorProfile[] = [
   {
     id: "niyobyose-brancal",
     name: "Niyobyose Brancal",
     title: "Instructor, Big Data IQ Minds",
-    bio: "",
-    photoUrl: "",
-    expertise: [],
-    teachingInterests: [],
-    links: [],
-    verified: false,
+    bio: "Niyobyose Brancal is a data analytics enthusiast and aspiring professional specializing in statistical analysis, data visualization, and research. He works with tools such as R, Python, Excel, Power BI, and Streamlit to transform data into actionable insights. Passionate about problem-solving, innovation, and sustainable development, he applies data-driven approaches to address real-world challenges in Rwanda while building impactful projects and continuously expanding his technical skills.",
+    photoUrl: "/brand/instructor-niyobyose-brancal.jpg",
+    expertise: ["Statistical analysis", "Data visualization", "Research", "R", "Python", "Excel", "Power BI", "Streamlit"],
+    teachingInterests: [
+      "Turning data into actionable insights",
+      "Problem-solving and innovation with data",
+      "Data for sustainable development in Rwanda",
+    ],
+    links: [{ label: "LinkedIn", url: "https://www.linkedin.com/in/niyobyose-brancal-901841409/" }],
+    verified: true,
     published: true,
   },
 ];

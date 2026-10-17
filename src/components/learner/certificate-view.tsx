@@ -2,7 +2,7 @@
 
 import { Printer } from "lucide-react";
 import { useLearner } from "@/lib/learner/provider";
-import { LogoMark } from "@/components/layout/logo";
+import Image from "next/image";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/layout";
 import { formatDate } from "@/lib/utils";
@@ -30,13 +30,7 @@ export function CertificateView({ id }: { id: string }) {
           </p>
         ) : null}
         <div className="relative flex h-full flex-col items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LogoMark className="size-12" />
-            <span className="text-left">
-              <span className="block text-lg font-bold text-navy-900">{site.name}</span>
-              <span className="block text-xs uppercase tracking-[0.2em] text-teal-600">{site.slogan}</span>
-            </span>
-          </div>
+          <Image src="/brand/bdim-logo.png" alt={site.name} width={1080} height={795} className="h-24 w-auto sm:h-28" priority />
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted">Certificate of completion</p>
             <p className="mt-4 text-sm text-muted">This certifies that</p>

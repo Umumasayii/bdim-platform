@@ -1,43 +1,39 @@
+import Image from "next/image";
 import Link from "next/link";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 /*
-  Placeholder brand mark. When the official BDIM logo is available, put it in
-  public/brand/ and set NEXT_PUBLIC_LOGO_URL (e.g. /brand/bdim-logo.svg) — it
-  is rendered as-is, preserving its proportions.
+  Official BDIM mark, cropped from public/brand/bdim-logo.png (the full logo
+  with wordmark). The wordmark next to it is live text styled to match the
+  logo — "IQ" in green — so it stays crisp at every size.
 */
-export function LogoMark({ className }: { className?: string }) {
+export function LogoMark({ className, onDark = false }: { className?: string; onDark?: boolean }) {
   return (
-    <svg viewBox="0 0 40 40" className={cn("size-9", className)} aria-hidden>
-      <rect width="40" height="40" rx="11" fill="var(--color-navy-800)" />
-      <rect x="9" y="22" width="5" height="9" rx="1.5" fill="var(--color-teal-400)" />
-      <rect x="17.5" y="16" width="5" height="15" rx="1.5" fill="var(--color-teal-300)" />
-      <rect x="26" y="10" width="5" height="21" rx="1.5" fill="var(--color-leaf-400)" />
-      <circle cx="28.5" cy="8.5" r="2.4" fill="#fff" />
-    </svg>
+    <span className={cn("relative inline-grid size-10 shrink-0 place-items-center", onDark && "rounded-xl bg-white p-1", className)}>
+      <Image src="/brand/bdim-mark-128.png" alt="" width={128} height={128} className="size-full object-contain" priority />
+    </span>
+  );
+}
+
+export function Wordmark({ inverted = false, className }: { inverted?: boolean; className?: string }) {
+  return (
+    <span className={cn("leading-none", className)}>
+      <span className={cn("block text-[16px] font-extrabold tracking-tight", inverted ? "text-white" : "text-navy-900")}>
+        Big Data <span className={inverted ? "text-leaf-400" : "text-leaf-600"}>IQ</span> Minds
+      </span>
+      <span className={cn("mt-1 block text-[9.5px] font-semibold uppercase tracking-[0.22em]", inverted ? "text-navy-200" : "text-navy-700")}>
+        Data <span className="text-leaf-500">•</span> Insights <span className="text-leaf-500">•</span> Impact
+      </span>
+    </span>
   );
 }
 
 export function Logo({ className, inverted = false }: { className?: string; inverted?: boolean }) {
   return (
     <Link href="/" className={cn("flex items-center gap-2.5", className)} aria-label={`${site.name} — home`}>
-      {site.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- logo may be any format/size supplied by BDIM
-        <img src={site.logoUrl} alt={site.name} className="h-9 w-auto object-contain" />
-      ) : (
-        <>
-          <LogoMark />
-          <span className="leading-none">
-            <span className={cn("block text-[15px] font-bold tracking-tight", inverted ? "text-white" : "text-navy-900")}>
-              Big Data IQ Minds
-            </span>
-            <span className={cn("block text-[10px] font-medium uppercase tracking-[0.16em]", inverted ? "text-teal-200" : "text-teal-600")}>
-              Data • Insights • Impact
-            </span>
-          </span>
-        </>
-      )}
+      <LogoMark onDark={inverted} />
+      <Wordmark inverted={inverted} />
     </Link>
   );
 }

@@ -49,6 +49,27 @@ export function Footer() {
               {site.contact.email}
             </a>
           ) : null}
+          {site.contact.whatsapp ? (
+            <a
+              href={`https://wa.me/${site.contact.whatsapp.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block text-sm text-teal-200 hover:text-white"
+            >
+              WhatsApp {site.contact.whatsapp}
+            </a>
+          ) : null}
+          {site.social.length ? (
+            <ul className="mt-3 flex gap-3">
+              {site.social.map((s) => (
+                <li key={s.url}>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-white underline-offset-4 hover:underline">
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
         {columns.map((col) => (
           <nav key={col.title} aria-label={col.title}>

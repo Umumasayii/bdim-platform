@@ -94,9 +94,9 @@ The local admin only works when Supabase is **not** configured. It sets a signed
 
 | What | Where |
 |---|---|
-| **Logo** | Put the file in `public/brand/` and set `NEXT_PUBLIC_LOGO_URL=/brand/<file>`. The current mark is a placeholder. Brand colours are tokens at the top of `src/app/globals.css`; adjust them to match the official logo. |
-| **Instructor profile and photo** | `/admin/instructors`. Only the name *Niyobyose Brancal* is filled in. Bio, expertise, interests and links are deliberately empty until verified. |
-| **Contact details** | `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_CONTACT_PHONE`, `NEXT_PUBLIC_CONTACT_WHATSAPP`. Company text lives in `src/lib/site.ts`. |
+| **Logo** | ✅ Done. The official logo is in `public/brand/` (`bdim-logo.png` full, `bdim-mark*.png` icon only, `bdim-icon-512.png` app icon). Colour tokens in `src/app/globals.css` are matched to it. To replace it, overwrite those files, keeping the names. |
+| **Instructor profile and photo** | ✅ Done (verified profile, photo in `public/brand/`). Edit in `/admin/instructors`. |
+| **Contact details** | ✅ Email, WhatsApp and LinkedIn are set in `src/lib/site.ts` (`NEXT_PUBLIC_CONTACT_*` variables override them). |
 | **Courses, lessons, quizzes, assignments** | `/admin/courses`. 30 courses ship with 170 outlined lessons; 17 lessons have full sample content (13 are free previews), and the others show an honest "materials in preparation" notice. |
 | **Practice questions** | `/admin/questions`. All 38 are original and labelled *Sample content*. |
 | **Learning paths** | `/admin/paths`. The seven homepage career goals are in `src/content/paths.ts`. |

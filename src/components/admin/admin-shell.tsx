@@ -28,7 +28,7 @@ export function AdminShell({ viewer, children }: { viewer: { name: string; role:
     <div className="grid flex-1 lg:grid-cols-[15rem_1fr]">
       <aside className="border-b border-line bg-navy-950 text-navy-100 lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 px-5 py-5">
-          <LogoMark className="size-8" />
+          <LogoMark className="size-9" onDark />
           <span className="text-sm font-bold text-white">BDIM Admin</span>
         </div>
         <nav aria-label="Admin">

@@ -89,9 +89,9 @@ export function KpiChallenge() {
                   <YAxis yAxisId="r" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar yAxisId="l" dataKey="enrolled" name="Enrolled" fill="#159a94" radius={[4, 4, 0, 0]} />
-                  <Line yAxisId="l" dataKey="target" name="Target" stroke="#102545" strokeDasharray="4 3" dot={false} />
-                  <Line yAxisId="r" dataKey="completion" name="Completion %" stroke="#279853" strokeWidth={2} />
+                  <Bar yAxisId="l" dataKey="enrolled" name="Enrolled" fill="#069386" radius={[4, 4, 0, 0]} />
+                  <Line yAxisId="l" dataKey="target" name="Target" stroke="#052553" strokeDasharray="4 3" dot={false} />
+                  <Line yAxisId="r" dataKey="completion" name="Completion %" stroke="#17ab59" strokeWidth={2} />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
@@ -105,7 +105,7 @@ export function KpiChallenge() {
                   <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <YAxis type="category" dataKey="district" tick={{ fontSize: 11 }} width={70} />
                   <Tooltip />
-                  <Bar dataKey="rate" name="Completion %" fill="#2f5895" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="rate" name="Completion %" fill="#1985c9" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

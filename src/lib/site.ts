@@ -21,14 +21,14 @@ export const site = {
     { title: "Measurable impact", text: "Skills and solutions judged by the decisions they improve." },
   ],
   location: "Kigali, Rwanda",
-  // TODO(BDIM): replace with verified contact details before launch.
+  // Public contact details (environment variables override these if set).
   contact: {
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
-    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "",
-    whatsapp: process.env.NEXT_PUBLIC_CONTACT_WHATSAPP ?? "",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "brancharich@gmail.com",
+    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "",
+    whatsapp: process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || "+250 782 220 588",
   },
-  social: [] as { label: string; url: string }[],
-  logoUrl: process.env.NEXT_PUBLIC_LOGO_URL ?? "",
+  social: [{ label: "LinkedIn", url: "https://www.linkedin.com/in/niyobyose-brancal-901841409/" }],
+  logo: { full: "/brand/bdim-logo.png", mark: "/brand/bdim-mark.png" },
 };
 
 export const mainNav = [
