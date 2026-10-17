@@ -201,6 +201,7 @@ function HeaderView({ pathname }: { pathname: string }) {
   }, [open]);
 
   return (
+    <>
     <header className="sticky top-0 z-40 border-b border-line/80 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-navy-900 focus:px-3 focus:py-2 focus:text-white">
         Skip to content
@@ -233,7 +234,9 @@ function HeaderView({ pathname }: { pathname: string }) {
           </button>
         </div>
       </Container>
+    </header>
 
+      {/* Outside <header>: its backdrop-filter would make it the containing block for this fixed panel. */}
       {open ? (
         <div id="mobile-menu" className="fixed inset-x-0 bottom-0 top-16 z-40 overflow-y-auto border-t border-line bg-white lg:hidden">
           <Container className="py-4">
@@ -267,6 +270,6 @@ function HeaderView({ pathname }: { pathname: string }) {
           </Container>
         </div>
       ) : null}
-    </header>
+    </>
   );
 }
