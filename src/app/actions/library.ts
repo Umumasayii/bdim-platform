@@ -2,8 +2,9 @@
 
 import { createHash } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
-import { isSupabaseConfigured, siteUrl } from "@/lib/config";
-import { notifyStaff } from "@/lib/email";
+import { isSupabaseConfigured } from "@/lib/config";
+import { after } from "next/server";
+import { dispatchNotificationEmails } from "@/lib/notifications";
 import { createServiceClient, createUserClient } from "@/lib/supabase/server";
 
 export type OrderResult = { ok: true; message: string } | { ok: false; message: string };
@@ -39,12 +40,7 @@ export async function placeLibraryOrder(input: { itemId: string; payerPhone: str
     return { ok: false, message: error.message };
   }
 
-  const amount = `${Number(item.price).toLocaleString("en-US")} ${item.currency}`;
-  await notifyStaff(
-    `New library order: ${item.title} (${amount})`,
-    `${user.email} ordered "${item.title}" for ${amount}.\n\nPaid from: ${payerPhone}\nTransaction reference: ${input.paymentReference.trim() || "—"}\n${input.note.trim() ? `Note: ${input.note.trim()}\n` : ""}\nCheck the payment, then confirm it: ${siteUrl}/admin/library#orders`,
-    user.email,
-  ).catch(() => {});
+  after(() => dispatchNotificationEmails().catch(() => 0)); // buyer receipt + BDIM inbox alert
   return { ok: true, message: "Order sent. Your download unlocks as soon as we confirm the payment — you'll get an email." };
 }
 

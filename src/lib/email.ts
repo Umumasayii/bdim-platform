@@ -32,6 +32,9 @@ const staffAddress = () => process.env.BDIM_NOTIFICATION_EMAIL || process.env.SM
 
 export const emailConfigured = () => provider() !== null;
 
+/** Which addresses are in use (no secrets) — reported by the daily job for checking. */
+export const emailSettings = () => ({ from: fromAddress(), staffInbox: staffAddress() });
+
 let transporter: Transporter | null = null;
 function smtp() {
   if (!transporter) {

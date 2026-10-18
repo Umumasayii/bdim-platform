@@ -1,6 +1,6 @@
 import "server-only";
 import { isSupabaseConfigured, siteUrl } from "@/lib/config";
-import { emailConfigured, sendEmail } from "@/lib/email";
+import { emailConfigured, notifyStaff, sendEmail } from "@/lib/email";
 import { getStore } from "@/lib/data/store";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -26,7 +26,18 @@ export async function dispatchNotificationEmails(limit = 50): Promise<number> {
     return 0;
   }
   let sent = 0;
+  const staffAlerts = new Set<string>();
   for (const n of (data ?? []) as QueuedEmail[]) {
+    // Staff alerts: one email per alert to the BDIM inbox, not to each staff member.
+    if (n.kind.startsWith("staff_")) {
+      const key = [n.kind, n.title, n.body, n.link].join("|");
+      if (staffAlerts.has(key)) continue;
+      staffAlerts.add(key);
+      if (await notifyStaff(n.title, `${n.body}
+
+Open it here: ${n.link ? `${siteUrl}${n.link}` : siteUrl}`)) sent++;
+      continue;
+    }
     if (n.opted_out || !n.email) continue;
     const link = n.link ? `${siteUrl}${n.link}` : siteUrl;
     const ok = await sendEmail(

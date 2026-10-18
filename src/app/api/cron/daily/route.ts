@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { dispatchNotificationEmails, sendInactivityEmails } from "@/lib/notifications";
+import { emailSettings } from "@/lib/email";
 
 /*
   Daily job, run by Vercel Cron (see vercel.json). Vercel sends
@@ -21,5 +22,5 @@ export async function GET(request: Request) {
   if (!authorised(request.headers.get("authorization"))) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const notificationEmails = await dispatchNotificationEmails(200);
   const inactivityEmails = await sendInactivityEmails(Date.now());
-  return Response.json({ notificationEmails, inactivityEmails });
+  return Response.json({ notificationEmails, inactivityEmails, ...emailSettings() });
 }

@@ -17,6 +17,7 @@ import {
   Library,
   Mail,
   ShoppingBag,
+  UserPlus,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const icons: Record<string, LucideIcon> = {
   staff_submission: FileUp,
   staff_enrollment_request: GraduationCap,
   staff_order: ShoppingBag,
+  staff_new_user: UserPlus,
   message: Mail,
 };
 
