@@ -23,7 +23,7 @@ export const site = {
   location: "Kigali, Rwanda",
   // Public contact details (environment variables override these if set).
   contact: {
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "brancharich@gmail.com",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "bigdataiqminds@gmail.com",
     phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "+250 787 884 835",
     whatsapp: process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || "+250 782 220 599",
   },
