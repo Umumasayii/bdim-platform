@@ -46,24 +46,19 @@ function smtp() {
   return transporter;
 }
 
-/* Signature added to the end of every email: logo, name, phone, email and website. */
-const signatureName = "BDIM Rwanda";
+/* Signature added to the end of every email: logo, company name and phone. */
+const signatureName = site.shortLegalName;
 const signaturePhone = site.contact.whatsapp;
-const siteHost = siteUrl.replace(/^https?:\/\//, "");
 
-const signatureText = () =>
-  ["--", signatureName, site.name, `Tel: ${signaturePhone}`, site.contact.email ? `Email: ${site.contact.email}` : "", siteUrl].filter(Boolean).join("\n");
+const signatureText = () => ["--", signatureName, `Tel: ${signaturePhone}`].join("\n");
 
 function signatureHtml() {
   const tel = signaturePhone.replace(/[^\d+]/g, "");
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:22px;border-top:1px solid #e2e7ee;padding-top:16px"><tr>
-<td style="vertical-align:top;padding-right:14px"><img src="${siteUrl}/brand/bdim-mark-128.png" width="56" height="56" alt="BDIM" style="display:block;border-radius:12px;border:1px solid #e2e7ee"></td>
-<td style="vertical-align:top;font-size:14px;line-height:1.5;color:#061d42">
+<td style="vertical-align:middle;padding-right:14px"><img src="${siteUrl}/brand/bdim-mark-128.png" width="56" height="56" alt="BDIM" style="display:block;border-radius:12px;border:1px solid #e2e7ee"></td>
+<td style="vertical-align:middle;font-size:14px;line-height:1.5;color:#061d42">
 <div style="font-weight:800;font-size:16px">${escapeHtml(signatureName)}</div>
-<div style="color:#4d5f7a">${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</div>
 <div>Tel: <a href="tel:${tel}" style="color:#077a70;text-decoration:none">${escapeHtml(signaturePhone)}</a></div>
-${site.contact.email ? `<div>Email: <a href="mailto:${site.contact.email}" style="color:#077a70;text-decoration:none">${escapeHtml(site.contact.email)}</a></div>` : ""}
-<div><a href="${siteUrl}" style="color:#077a70;text-decoration:none">${escapeHtml(siteHost)}</a></div>
 </td></tr></table>`;
 }
 
