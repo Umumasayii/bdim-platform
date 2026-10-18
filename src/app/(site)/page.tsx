@@ -15,6 +15,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Badge, levelTone } from "@/components/ui/badge";
 import { HeroDemo } from "@/components/home/hero-demo";
 import { CareerSelector } from "@/components/home/career-selector";
+import { ExploreGrid } from "@/components/home/explore-grid";
 import { CourseCard } from "@/components/courses/course-card";
 import { LessonsProgress } from "@/components/home/path-progress";
 import { QuestionPractice } from "@/components/practice/question-practice";
@@ -80,156 +81,152 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      {/* B. Career path selector */}
-      <section className="py-14" aria-label="Career roadmaps">
+      {/* B–E. Explore: career roadmaps, ecosystem, learning paths, practice preview */}
+      <section className="border-y border-line bg-surface py-14" aria-label="Explore Big Data IQ Minds">
         <Container>
-          <Collapsible
-            id="career-paths"
-            eyebrow="Choose your direction"
-            title="Where do you want your data skills to take you?"
-            description="Pick a goal to see a tailored roadmap: the stages, courses, projects and practice questions that build the skills for that role."
-          >
-            <CareerSelector
-            goals={careerGoals}
-            courses={courses.map((c) => ({ slug: c.slug, title: c.title, level: c.level }))}
-            questions={questions.map((q) => ({ slug: q.slug, title: q.title, topic: q.topic }))}
+          <ExploreGrid
+            items={[
+              {
+                id: "career-paths",
+                icon: "compass",
+                eyebrow: "Choose your direction",
+                title: "Where do you want your data skills to take you?",
+                description: "Pick a goal to see a tailored roadmap: the stages, courses, projects and practice questions that build the skills for that role.",
+                content: (
+                      <CareerSelector
+                      goals={careerGoals}
+                      courses={courses.map((c) => ({ slug: c.slug, title: c.title, level: c.level }))}
+                      questions={questions.map((q) => ({ slug: q.slug, title: q.title, topic: q.topic }))}
+                    />
+                ),
+              },
+              {
+                id: "ecosystem",
+                icon: "network",
+                eyebrow: "Explore our learning ecosystem",
+                title: "Eight connected areas of practice",
+                description: "Skills that work together on real problems — from collecting data in the field to presenting decisions to leadership.",
+                content: (
+                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                      {ecosystem.map((e) => (
+                        <li key={e.title}>
+                          <Link
+                            href={e.href}
+                            className="group flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[var(--shadow-lift)]"
+                          >
+                            <span className="grid size-10 place-items-center rounded-xl bg-navy-800 text-teal-200 transition-colors group-hover:bg-teal-600 group-hover:text-white">
+                              <EcosystemIcon name={e.icon} className="size-5" />
+                            </span>
+                            <span className="mt-4 font-bold text-navy-950">{e.title}</span>
+                            <span className="mt-1.5 text-sm leading-relaxed text-muted">{e.text}</span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                ),
+              },
+              {
+                id: "learning-tracks",
+                icon: "route",
+                eyebrow: "Featured learning paths",
+                title: "Structured tracks from first steps to advanced practice",
+                description: "Beginner, intermediate and advanced tracks with prerequisites, modules, objectives and practical assignments.",
+                content: (
+                  <>
+                      <div className="grid gap-6 lg:grid-cols-3">
+                        {trackPaths.map((p) => {
+                          const pathCourses = p.courseSlugs.map((s) => courseBySlug.get(s)).filter((c) => c !== undefined);
+                          const lessonIds = pathCourses.flatMap((c) => c.modules.flatMap((m) => m.lessons.map((l) => l.id)));
+                          return (
+                            <article key={p.id} className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-card)]">
+                              <Badge tone={levelTone(p.level)} className="self-start">
+                                {p.level} track
+                              </Badge>
+                              <h3 className="mt-3 text-xl font-bold text-navy-950">{p.title}</h3>
+                              <p className="mt-2 text-sm leading-relaxed text-muted">{p.summary}</p>
+                              <dl className="mt-5 grid gap-4 text-sm">
+                                <div>
+                                  <dt className="font-semibold text-navy-950">Prerequisites</dt>
+                                  <dd className="mt-1 text-muted">{p.prerequisites.join("; ")}</dd>
+                                </div>
+                                <div>
+                                  <dt className="font-semibold text-navy-950">Modules</dt>
+                                  <dd className="mt-1">
+                                    <ol className="grid gap-1 text-muted">
+                                      {pathCourses.map((c, i) => (
+                                        <li key={c.slug}>
+                                          {i + 1}. {c.title}
+                                        </li>
+                                      ))}
+                                    </ol>
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="font-semibold text-navy-950">You will be able to</dt>
+                                  <dd className="mt-1 text-muted">{p.objectives[0]}</dd>
+                                </div>
+                                <div>
+                                  <dt className="font-semibold text-navy-950">Practical assignment</dt>
+                                  <dd className="mt-1 text-muted">{p.assignments[0]}</dd>
+                                </div>
+                              </dl>
+                              <div className="mt-auto pt-6">
+                                <LessonsProgress lessonIds={lessonIds} label={`${p.title} progress`} />
+                                <Link href={`/learning-paths/${p.slug}`} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
+                                  View path <ArrowRight className="size-4" aria-hidden />
+                                </Link>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-8">
+                        <ButtonLink href="/learning-paths" variant="outline">
+                          All learning paths
+                        </ButtonLink>
+                      </div>
+                  </>
+                ),
+              },
+              {
+                id: "practice-preview",
+                icon: "code",
+                dark: true,
+                eyebrow: "Practice preview",
+                title: "Learn by doing, with feedback straight away",
+                description: "Answer a sample question, then try a real coding exercise. Explanations show the reasoning, not just the answer.",
+                content: (
+                    <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+                      <div className="text-ink">
+                        <QuestionPractice question={previewQuestion} compact />
+                      </div>
+                      <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-teal-200">
+                          <Code2 className="size-4" aria-hidden /> Short coding exercise · SQL
+                        </p>
+                        <h3 className="mt-2 text-xl font-bold">{previewExercise.title}</h3>
+                        <p className="mt-2 text-sm text-navy-200">
+                          Using the <code className="rounded bg-white/10 px-1 font-mono">sales</code> table, return each region with its total revenue,
+                          highest first.
+                        </p>
+                        <pre className="mt-4 overflow-x-auto rounded-xl bg-black/30 p-4 font-mono text-[13px] leading-relaxed text-teal-100">
+                          <code>{previewExercise.starterCode.trim()}</code>
+                        </pre>
+                        <p className="mt-4 text-xs text-navy-300">Runs on a real SQLite database inside your browser — nothing is executed on our servers.</p>
+                        <div className="mt-auto flex flex-wrap gap-3 pt-6">
+                          <ButtonLink href={`/coding-lab?exercise=${previewExercise.id}`} variant="teal">
+                            Open in the Coding Lab
+                          </ButtonLink>
+                          <ButtonLink href="/practice" variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+                            Full practice zone
+                          </ButtonLink>
+                        </div>
+                      </div>
+                    </div>
+                ),
+              },
+            ]}
           />
-          </Collapsible>
-        </Container>
-      </section>
-
-      {/* C. Learning ecosystem */}
-      <section className="border-y border-line bg-surface py-14" aria-label="Learning ecosystem">
-        <Container>
-          <Collapsible
-            id="ecosystem"
-            eyebrow="Explore our learning ecosystem"
-            title="Eight connected areas of practice"
-            description="Skills that work together on real problems — from collecting data in the field to presenting decisions to leadership."
-          >
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {ecosystem.map((e) => (
-              <li key={e.title}>
-                <Link
-                  href={e.href}
-                  className="group flex h-full flex-col rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-[var(--shadow-lift)]"
-                >
-                  <span className="grid size-10 place-items-center rounded-xl bg-navy-800 text-teal-200 transition-colors group-hover:bg-teal-600 group-hover:text-white">
-                    <EcosystemIcon name={e.icon} className="size-5" />
-                  </span>
-                  <span className="mt-4 font-bold text-navy-950">{e.title}</span>
-                  <span className="mt-1.5 text-sm leading-relaxed text-muted">{e.text}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          </Collapsible>
-        </Container>
-      </section>
-
-      {/* D. Featured learning paths */}
-      <section className="py-14" aria-label="Featured learning paths">
-        <Container>
-          <Collapsible
-            id="learning-tracks"
-            eyebrow="Featured learning paths"
-            title="Structured tracks from first steps to advanced practice"
-            description="Beginner, intermediate and advanced tracks with prerequisites, modules, objectives and practical assignments."
-          >
-          <div className="grid gap-6 lg:grid-cols-3">
-            {trackPaths.map((p) => {
-              const pathCourses = p.courseSlugs.map((s) => courseBySlug.get(s)).filter((c) => c !== undefined);
-              const lessonIds = pathCourses.flatMap((c) => c.modules.flatMap((m) => m.lessons.map((l) => l.id)));
-              return (
-                <article key={p.id} className="flex flex-col rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-card)]">
-                  <Badge tone={levelTone(p.level)} className="self-start">
-                    {p.level} track
-                  </Badge>
-                  <h3 className="mt-3 text-xl font-bold text-navy-950">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{p.summary}</p>
-                  <dl className="mt-5 grid gap-4 text-sm">
-                    <div>
-                      <dt className="font-semibold text-navy-950">Prerequisites</dt>
-                      <dd className="mt-1 text-muted">{p.prerequisites.join("; ")}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold text-navy-950">Modules</dt>
-                      <dd className="mt-1">
-                        <ol className="grid gap-1 text-muted">
-                          {pathCourses.map((c, i) => (
-                            <li key={c.slug}>
-                              {i + 1}. {c.title}
-                            </li>
-                          ))}
-                        </ol>
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold text-navy-950">You will be able to</dt>
-                      <dd className="mt-1 text-muted">{p.objectives[0]}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-semibold text-navy-950">Practical assignment</dt>
-                      <dd className="mt-1 text-muted">{p.assignments[0]}</dd>
-                    </div>
-                  </dl>
-                  <div className="mt-auto pt-6">
-                    <LessonsProgress lessonIds={lessonIds} label={`${p.title} progress`} />
-                    <Link href={`/learning-paths/${p.slug}`} className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-teal-700 hover:underline">
-                      View path <ArrowRight className="size-4" aria-hidden />
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-          <div className="mt-8">
-            <ButtonLink href="/learning-paths" variant="outline">
-              All learning paths
-            </ButtonLink>
-          </div>
-          </Collapsible>
-        </Container>
-      </section>
-
-      {/* E. Interactive practice preview */}
-      <section className="border-y border-line bg-navy-950 py-14 text-white" aria-label="Practice preview">
-        <Container>
-          <Collapsible
-            id="practice-preview"
-            tone="dark"
-            eyebrow="Practice preview"
-            title="Learn by doing, with feedback straight away"
-            description="Answer a sample question, then try a real coding exercise. Explanations show the reasoning, not just the answer."
-          >
-          <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-            <div className="text-ink">
-              <QuestionPractice question={previewQuestion} compact />
-            </div>
-            <div className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-              <p className="flex items-center gap-2 text-sm font-semibold text-teal-200">
-                <Code2 className="size-4" aria-hidden /> Short coding exercise · SQL
-              </p>
-              <h3 className="mt-2 text-xl font-bold">{previewExercise.title}</h3>
-              <p className="mt-2 text-sm text-navy-200">
-                Using the <code className="rounded bg-white/10 px-1 font-mono">sales</code> table, return each region with its total revenue,
-                highest first.
-              </p>
-              <pre className="mt-4 overflow-x-auto rounded-xl bg-black/30 p-4 font-mono text-[13px] leading-relaxed text-teal-100">
-                <code>{previewExercise.starterCode.trim()}</code>
-              </pre>
-              <p className="mt-4 text-xs text-navy-300">Runs on a real SQLite database inside your browser — nothing is executed on our servers.</p>
-              <div className="mt-auto flex flex-wrap gap-3 pt-6">
-                <ButtonLink href={`/coding-lab?exercise=${previewExercise.id}`} variant="teal">
-                  Open in the Coding Lab
-                </ButtonLink>
-                <ButtonLink href="/practice" variant="outline" className="border-white/20 bg-transparent text-white hover:bg-white/10">
-                  Full practice zone
-                </ButtonLink>
-              </div>
-            </div>
-          </div>
-          </Collapsible>
         </Container>
       </section>
 
