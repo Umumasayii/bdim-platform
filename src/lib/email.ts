@@ -35,6 +35,8 @@ export const emailConfigured = () => provider() !== null;
 /** Which addresses are in use (no secrets) — reported by the daily job for checking. */
 export const emailSettings = () => ({ from: fromAddress(), staffInbox: staffAddress() });
 
+const clean = (v?: string) => (v ?? "").trim().replace(/^["']|["']$/g, "").trim();
+
 let transporter: Transporter | null = null;
 function smtp() {
   if (!transporter) {
@@ -43,7 +45,8 @@ function smtp() {
       host: process.env.SMTP_HOST,
       port,
       secure: port === 465,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      // Gmail shows App Passwords as "abcd efgh ijkl mnop"; accept them pasted with spaces or quotes.
+      auth: { user: clean(process.env.SMTP_USER), pass: clean(process.env.SMTP_PASS).replace(/\s+/g, "") },
     });
   }
   return transporter;
