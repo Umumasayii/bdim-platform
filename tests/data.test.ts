@@ -109,3 +109,18 @@ test("local store prevents overlapping bookings for the same instructor", async 
   assert.equal((await localStore.getBookingByToken("token-f"))?.id, "f");
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("assignment deadlines are kept as ISO times and invalid ones are rejected", () => {
+  const base = seedCourses.find((c) => c.modules.some((m) => m.assignment))!;
+  const withDue = (dueAt: string) => ({
+    ...base,
+    modules: base.modules.map((m) => (m.assignment ? { ...m, assignment: { ...m.assignment, dueAt } } : m)),
+  });
+  const ok = courseSchema.safeParse(withDue("2026-11-01T17:00:00+02:00"));
+  assert.ok(ok.success);
+  assert.equal(ok.data.modules.find((m) => m.assignment)?.assignment?.dueAt, "2026-11-01T15:00:00.000Z");
+  const none = courseSchema.safeParse(withDue(""));
+  assert.ok(none.success);
+  assert.equal(none.data.modules.find((m) => m.assignment)?.assignment?.dueAt, undefined);
+  assert.equal(courseSchema.safeParse(withDue("next friday")).success, false);
+});

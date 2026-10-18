@@ -68,6 +68,8 @@ export interface Assignment {
   id: string;
   title: string;
   brief: string;
+  /** Deadline (ISO date-time). After it, submissions are refused (the database enforces it). */
+  dueAt?: string;
 }
 
 export interface CourseModule {

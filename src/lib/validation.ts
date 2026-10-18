@@ -99,7 +99,19 @@ export const courseSchema = z.object({
           ),
         })
         .optional(),
-      assignment: z.object({ id: required("Assignment id", 160), title: required("Title"), brief: trimmed(2000) }).optional(),
+      assignment: z
+        .object({
+          id: required("Assignment id", 160),
+          title: required("Title"),
+          brief: trimmed(2000),
+          dueAt: z
+            .string()
+            .trim()
+            .refine((v) => !v || !Number.isNaN(Date.parse(v)), "Enter a valid deadline")
+            .transform((v) => (v ? new Date(v).toISOString() : undefined))
+            .optional(),
+        })
+        .optional(),
     }),
   ),
 });

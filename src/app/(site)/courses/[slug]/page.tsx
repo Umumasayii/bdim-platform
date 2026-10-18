@@ -13,6 +13,9 @@ import { Badge, levelTone } from "@/components/ui/badge";
 import { EnrollPanel } from "@/components/courses/enroll-panel";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 
+const kigaliTime = (iso: string) =>
+  new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Kigali" });
+
 export async function generateStaticParams() {
   const courses = await getPublishedCourses();
   return courses.map((c) => ({ slug: c.slug }));
@@ -35,7 +38,7 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
   const [course, library] = await Promise.all([getCourseBySlug(slug), getPublishedLibrary()]);
   if (!course) notFound();
   const books = library.filter((i) => i.kind === "book" && i.courseId === course.id);
-  const deliverables = course.modules.flatMap((m) => (m.assignment ? [m.assignment.title] : []));
+  const deliverables = course.modules.flatMap((m) => (m.assignment ? [m.assignment] : []));
   const category = categories.find((c) => c.id === course.category);
   const hours = Math.round(courseMinutes(course) / 60);
 
@@ -100,8 +103,12 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
                   <h2 className="text-lg font-bold text-navy-950">What you&apos;ll deliver</h2>
                   <ul className="mt-3 grid gap-2">
                     {deliverables.map((d) => (
-                      <li key={d} className="flex gap-2 text-sm text-navy-900">
-                        <FileText className="mt-0.5 size-4 shrink-0 text-teal-600" aria-hidden /> {d}
+                      <li key={d.id} className="flex gap-2 text-sm text-navy-900">
+                        <FileText className="mt-0.5 size-4 shrink-0 text-teal-600" aria-hidden />
+                        <span>
+                          {d.title}
+                          {d.dueAt ? <span className="block text-xs text-muted">Due {kigaliTime(d.dueAt)} (Kigali time)</span> : null}
+                        </span>
                       </li>
                     ))}
                     {course.certificate.enabled ? (

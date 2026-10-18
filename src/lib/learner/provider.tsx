@@ -355,7 +355,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
             filePath = `${user.id}/${courseId}/${assignmentId}/${Date.now()}-${safe}`;
             const { error: upErr } = await db.storage.from("submissions").upload(filePath, file, { contentType: file.type || undefined });
             if (upErr) {
-              setError(`Upload failed: ${upErr.message}`);
+              setError(upErr.message.includes("row-level security") ? "Submissions for this assignment are closed (the deadline has passed)." : `Upload failed: ${upErr.message}`);
               return false;
             }
           }
@@ -365,7 +365,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
             .select("id")
             .single();
           if (err) {
-            setError(err.message);
+            setError(err.message.includes("row-level security") ? "Submissions for this assignment are closed (the deadline has passed)." : err.message);
             return false;
           }
           id = data.id;

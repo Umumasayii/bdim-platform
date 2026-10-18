@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Code2, Download, Lock, Paperclip } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, BookmarkCheck, CalendarClock, CheckCircle2, Code2, Download, Lock, Paperclip } from "lucide-react";
 import type { Course } from "@/lib/types";
 import { SUBMISSION_MAX_BYTES, useLearner } from "@/lib/learner/provider";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
@@ -45,6 +45,32 @@ function NotesBox({ courseId, lessonId }: { courseId: string; lessonId: string }
   );
 }
 
+/** Current time, refreshed every `everyMs` (so a deadline closes on screen when it passes). */
+function useNow(everyMs: number) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const first = window.setTimeout(tick, 0);
+    const timer = window.setInterval(tick, everyMs);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(timer);
+    };
+  }, [everyMs]);
+  return now;
+}
+
+export const formatDeadline = (iso: string) =>
+  new Date(iso).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+function timeLeft(ms: number) {
+  const m = Math.floor(ms / 60_000);
+  if (m < 60) return `${m} min left`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h} h ${m % 60} min left`;
+  return `${Math.floor(h / 24)} days left`;
+}
+
 function AssignmentBox({ courseId, assignment }: { courseId: string; assignment: NonNullable<Course["modules"][number]["assignment"]> }) {
   const { state, submitAssignment, mode } = useLearner();
   const [body, setBody] = useState("");
@@ -60,9 +86,19 @@ function AssignmentBox({ courseId, assignment }: { courseId: string; assignment:
     else setFileError("Could not open the file.");
   }
   const submissions = state.assignments.filter((a) => a.assignmentId === assignment.id);
+  const now = useNow(30_000);
+  const due = assignment.dueAt ? new Date(assignment.dueAt).getTime() : null;
+  const closed = due !== null && now !== null && now >= due;
   return (
     <section className="rounded-2xl border border-line bg-white p-6">
       <h2 className="text-lg font-bold text-navy-950">Assignment: {assignment.title}</h2>
+      {assignment.dueAt ? (
+        <p className={`mt-2 inline-flex flex-wrap items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${closed ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800"}`}>
+          <CalendarClock className="size-3.5" aria-hidden />
+          {closed ? "Closed on" : "Due"} {formatDeadline(assignment.dueAt)}
+          {!closed && due !== null && now !== null ? <span className="font-normal">· {timeLeft(due - now)}</span> : null}
+        </p>
+      ) : null}
       <p className="mt-2 text-sm leading-relaxed text-navy-900">{assignment.brief}</p>
       {submissions.length ? (
         <ul className="mt-4 grid gap-2">
@@ -88,6 +124,15 @@ function AssignmentBox({ courseId, assignment }: { courseId: string; assignment:
           ))}
         </ul>
       ) : null}
+      {closed ? (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm">
+          <Lock className="mt-0.5 size-4 shrink-0 text-red-700" aria-hidden />
+          <div>
+            <p className="font-semibold text-red-800">Submissions are closed</p>
+            <p className="mt-0.5 text-red-700">The deadline has passed, so this assignment no longer accepts submissions. Contact your instructor if you need help.</p>
+          </div>
+        </div>
+      ) : (
       <div className="mt-4 grid gap-3">
         <label htmlFor={`asg-${assignment.id}`} className="text-sm font-medium">
           Your submission
@@ -142,6 +187,7 @@ function AssignmentBox({ courseId, assignment }: { courseId: string; assignment:
           </Button>
         </div>
       </div>
+      )}
     </section>
   );
 }

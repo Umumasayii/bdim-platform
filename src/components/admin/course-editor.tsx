@@ -16,6 +16,15 @@ import { LessonMediaEditor } from "./lesson-media-editor";
 
 const FORMATS: DeliveryFormat[] = ["Live online", "In person (Kigali)", "Self-paced", "Corporate / group"];
 
+/** ISO date-time → value for <input type="datetime-local"> in the admin's own time zone. */
+function toLocalInput(iso?: string) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function move<T>(list: T[], i: number, dir: -1 | 1) {
   const j = i + dir;
   if (j < 0 || j >= list.length) return list;
@@ -402,6 +411,22 @@ export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course;
                     </Field>
                     <Field label="Brief" htmlFor={`${m.id}-ab`}>
                       <Textarea id={`${m.id}-ab`} rows={3} value={m.assignment.brief} onChange={(e) => setModule(mi, { ...m, assignment: { ...m.assignment!, brief: e.target.value } })} />
+                    </Field>
+                    <Field label="Deadline (optional) — submissions close automatically at this time" htmlFor={`${m.id}-ad`}>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Input
+                          id={`${m.id}-ad`}
+                          type="datetime-local"
+                          className="w-auto"
+                          value={toLocalInput(m.assignment.dueAt)}
+                          onChange={(e) => setModule(mi, { ...m, assignment: { ...m.assignment!, dueAt: e.target.value ? new Date(e.target.value).toISOString() : undefined } })}
+                        />
+                        {m.assignment.dueAt ? (
+                          <Button size="sm" variant="ghost" onClick={() => setModule(mi, { ...m, assignment: { ...m.assignment!, dueAt: undefined } })}>
+                            No deadline
+                          </Button>
+                        ) : null}
+                      </div>
                     </Field>
                     <div>
                       <Button size="sm" variant="ghost" onClick={() => setModule(mi, { ...m, assignment: undefined })}>
