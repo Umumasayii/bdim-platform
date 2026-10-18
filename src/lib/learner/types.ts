@@ -6,7 +6,7 @@ export interface LearnerProfile {
   bio: string;
   /** Public URL of the profile picture (Supabase Storage), or a data URL in demo mode. */
   avatarUrl?: string;
-  preferences: { weeklyGoalMinutes?: number; emailUpdates?: boolean; preferredLanguage?: string };
+  preferences: { weeklyGoalMinutes?: number; emailUpdates?: boolean; preferredLanguage?: string; /** Activity + reminder emails; on unless set to false. */ emailNotifications?: boolean };
 }
 
 export interface LearnerState {

@@ -2,8 +2,9 @@
 
 import { updateTag } from "next/cache";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
-import { isSupabaseConfigured, siteUrl } from "@/lib/config";
+import { isSupabaseConfigured } from "@/lib/config";
 import { TAGS } from "@/lib/data/content";
 import { LIBRARY_TAG, PAYMENT_TAG } from "@/lib/data/library";
 import { getStore } from "@/lib/data/store";
@@ -12,6 +13,7 @@ import { requireStaff } from "@/lib/auth/viewer";
 import { rateLimit } from "@/lib/rate-limit";
 import { createServiceClient, createUserClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { dispatchNotificationEmails } from "@/lib/notifications";
 import type {
   BookableService,
   BookingSettings,
@@ -36,6 +38,9 @@ import {
   questionSchema,
   testimonialSchema,
 } from "@/lib/validation";
+
+/** Notification rows are written by database triggers; email them once the response is sent. */
+const emailNotificationsSoon = () => after(() => dispatchNotificationEmails().catch(() => 0));
 
 export type AdminResult = { ok: true; message?: string } | { ok: false; message: string; errors?: Record<string, string> };
 
@@ -191,7 +196,9 @@ export async function setEnrollmentStatus(enrollmentId: string, status: "active"
   if (!isSupabaseConfigured) return { ok: false, message: "Enrollment management requires Supabase." };
   const db = await createUserClient();
   const { error } = await db.from("enrollments").update({ status, updated_at: new Date().toISOString() }).eq("id", enrollmentId);
-  return error ? { ok: false, message: error.message } : { ok: true, message: `Enrollment ${status}.` };
+  if (error) return { ok: false, message: error.message };
+  emailNotificationsSoon();
+  return { ok: true, message: `Enrollment ${status}.` };
 }
 
 export async function reviewAssignment(submissionId: string, feedback: string): Promise<AdminResult> {
@@ -203,7 +210,9 @@ export async function reviewAssignment(submissionId: string, feedback: string): 
     .from("assignment_submissions")
     .update({ status: "reviewed", feedback: feedback.slice(0, 4000) })
     .eq("id", submissionId);
-  return error ? { ok: false, message: error.message } : { ok: true, message: "Feedback saved." };
+  if (error) return { ok: false, message: error.message };
+  emailNotificationsSoon();
+  return { ok: true, message: "Feedback saved." };
 }
 
 // ───────── Users (admin only, Supabase) ─────────
@@ -232,7 +241,9 @@ export async function enrollUser(userId: string, courseId: string): Promise<Admi
   const { error } = await db
     .from("enrollments")
     .upsert({ user_id: userId, course_id: courseId, status: "active", updated_at: new Date().toISOString() }, { onConflict: "user_id,course_id" });
-  return error ? { ok: false, message: error.message } : { ok: true, message: "Enrolled." };
+  if (error) return { ok: false, message: error.message };
+  emailNotificationsSoon();
+  return { ok: true, message: "Enrolled." };
 }
 
 /** Short-lived download link for a learner's submitted file (staff only). */
@@ -257,7 +268,7 @@ export async function gradeSubmission(input: { id: string; score: number; maxSco
   if (!Number.isFinite(maxScore) || maxScore <= 0) return { ok: false, message: "“Out of” must be a positive number." };
   if (!Number.isFinite(score) || score < 0 || score > maxScore) return { ok: false, message: `Score must be between 0 and ${maxScore}.` };
   const db = await createUserClient();
-  const { data, error } = await db
+  const { error } = await db
     .from("assignment_submissions")
     .update({
       status: "reviewed",
@@ -268,25 +279,11 @@ export async function gradeSubmission(input: { id: string; score: number; maxSco
       graded_by: viewer.local ? null : viewer.id,
     })
     .eq("id", input.id)
-    .select("user_id, course_id, assignment_id")
-    .single();
+    .select("id")
+    .single(); // errors if the row wasn't updated
   if (error) return { ok: false, message: error.message };
 
-  // Let the learner know (best effort).
-  try {
-    const { data: u } = await createServiceClient().auth.admin.getUserById(data.user_id);
-    const course = (await getStore().listCourses({ includeUnpublished: true })).find((c) => c.id === data.course_id);
-    const assignment = course?.modules.find((m) => m.assignment?.id === data.assignment_id)?.assignment;
-    if (u.user?.email) {
-      await sendEmail(
-        u.user.email,
-        `Your assignment has been graded: ${assignment?.title ?? "assignment"}`,
-        `Hello,\n\nYour submission for "${assignment?.title ?? "your assignment"}" in ${course?.title ?? "your course"} has been graded.\n\nScore: ${score} / ${maxScore}${input.feedback ? `\n\nFeedback:\n${input.feedback}` : ""}\n\nSee all your grades: ${siteUrl}/dashboard?tab=grades\n\n— BDIM`,
-      );
-    }
-  } catch {
-    // Grade is saved even if the email fails.
-  }
+  emailNotificationsSoon(); // the learner gets an in-site notification and an email
   return { ok: true, message: `Graded ${score} / ${maxScore}.` };
 }
 
@@ -322,6 +319,7 @@ export async function saveLibraryItem(item: LibraryItem): Promise<AdminResult> {
   const { error } = item.id ? await db.from("library_items").update(row).eq("id", item.id) : await db.from("library_items").insert(row);
   if (error) return { ok: false, message: error.message };
   updateTag(LIBRARY_TAG);
+  emailNotificationsSoon(); // publishing notifies learners who can open it
   return { ok: true, message: item.id ? "Saved." : "Added to the library." };
 }
 
@@ -342,28 +340,14 @@ export async function setLibraryOrderStatus(id: string, status: LibraryOrderStat
   if (denied) return denied;
   const viewer = await requireStaff();
   const db = await createUserClient();
-  const { data, error } = await db
+  const { error } = await db
     .from("library_orders")
     .update({ status, paid_at: status === "paid" ? new Date().toISOString() : null, confirmed_by: status === "paid" && !viewer.local ? viewer.id : null })
     .eq("id", id)
-    .select("user_id, amount, currency, library_items(title)")
+    .select("id")
     .single();
   if (error) return { ok: false, message: error.message };
-  if (status === "paid") {
-    try {
-      const { data: u } = await createServiceClient().auth.admin.getUserById(data.user_id);
-      const title = (data.library_items as unknown as { title: string } | null)?.title ?? "your item";
-      if (u.user?.email) {
-        await sendEmail(
-          u.user.email,
-          `Payment confirmed: ${title}`,
-          `Hello,\n\nWe have received your payment of ${Number(data.amount).toLocaleString("en-US")} ${data.currency} for "${title}". It is now unlocked.\n\nDownload it from the library: ${siteUrl}/library\n\nThank you,\nBDIM`,
-        );
-      }
-    } catch {
-      // The order is confirmed even if the email fails.
-    }
-  }
+  emailNotificationsSoon();
   return { ok: true, message: status === "paid" ? "Payment confirmed — the learner can now download it." : status === "cancelled" ? "Order cancelled." : "Order reopened." };
 }
 

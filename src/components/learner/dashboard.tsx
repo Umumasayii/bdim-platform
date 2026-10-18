@@ -591,6 +591,15 @@ function ProfileForm() {
         />
         Email me about new courses and live classes
       </label>
+      <label className="flex items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          className="size-4 accent-teal-600"
+          checked={profile.preferences.emailNotifications !== false}
+          onChange={(e) => setProfile({ ...profile, preferences: { ...profile.preferences, emailNotifications: e.target.checked } })}
+        />
+        Email me about my activity (marks, certificates, new library documents) and reminders when I&apos;ve been away
+      </label>
       <div className="flex items-center gap-3">
         <Button type="submit" variant="teal">
           Save profile

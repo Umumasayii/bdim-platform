@@ -31,6 +31,10 @@ function saveLocal(state: LearnerState) {
 }
 
 const nowIso = () => new Date().toISOString();
+
+/** Tells the notification bell to refresh now (the database has just created a notification). */
+export const NOTIFY_EVENT = "bdim:notify";
+const pingNotifications = () => window.dispatchEvent(new Event(NOTIFY_EVENT));
 const uid = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now()));
 
 async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState> {
@@ -250,6 +254,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
         if (!requireMember()) return null;
         const status: EnrollmentStatus = enrollmentMode === "open" ? "active" : "requested";
         if (member && !(await run(db.from("enrollments").insert({ user_id: user.id, course_id: courseId, status })))) return null;
+        if (member) pingNotifications();
         update((s) => ((s.enrollments[courseId] = { status, createdAt: nowIso() }), s));
         return status;
       },
@@ -307,6 +312,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
             return null;
           }
           result = data as QuizGradeResult;
+          pingNotifications();
         } else {
           const graded = await gradeQuizLocal(courseSlug, quizId, answers);
           if (!graded.ok) {
@@ -363,6 +369,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
             return false;
           }
           id = data.id;
+          pingNotifications();
         }
         update((s) => {
           s.assignments.push({ id, courseId, assignmentId, body, link, status: "submitted", feedback: "", at: nowIso(), filePath, fileName });
@@ -497,6 +504,7 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
             setError(err.message.includes("requirements_not_met") ? "Completion requirements are not met yet." : err.message);
             return false;
           }
+          pingNotifications();
           const c = data as { id: string; course_id: string; certificate_number: string; course_title: string; learner_name: string; issued_at: string };
           update((s) => {
             s.certificates = s.certificates.filter((x) => x.courseId !== course.id);

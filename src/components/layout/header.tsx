@@ -11,6 +11,7 @@ import { Container } from "@/components/ui/layout";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBell } from "./notification-bell";
 import { Avatar } from "./avatar";
 
 function isActive(pathname: string, href: string) {
@@ -218,9 +219,11 @@ function HeaderView({ pathname }: { pathname: string }) {
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
           <AdminLink />
           <ThemeToggle />
+          <NotificationBell />
           <AccountMenu />
         </div>
         <div className="flex items-center gap-2 lg:hidden">
+          <NotificationBell />
           <ThemeToggle />
           <button
             type="button"
