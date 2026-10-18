@@ -46,6 +46,27 @@ function smtp() {
   return transporter;
 }
 
+/* Signature added to the end of every email: logo, name, phone, email and website. */
+const signatureName = "BDIM Rwanda";
+const signaturePhone = site.contact.whatsapp;
+const siteHost = siteUrl.replace(/^https?:\/\//, "");
+
+const signatureText = () =>
+  ["--", signatureName, site.name, `Tel: ${signaturePhone}`, site.contact.email ? `Email: ${site.contact.email}` : "", siteUrl].filter(Boolean).join("\n");
+
+function signatureHtml() {
+  const tel = signaturePhone.replace(/[^\d+]/g, "");
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:22px;border-top:1px solid #e2e7ee;padding-top:16px"><tr>
+<td style="vertical-align:top;padding-right:14px"><img src="${siteUrl}/brand/bdim-mark-128.png" width="56" height="56" alt="BDIM" style="display:block;border-radius:12px;border:1px solid #e2e7ee"></td>
+<td style="vertical-align:top;font-size:14px;line-height:1.5;color:#061d42">
+<div style="font-weight:800;font-size:16px">${escapeHtml(signatureName)}</div>
+<div style="color:#4d5f7a">${escapeHtml(site.name)} · ${escapeHtml(site.tagline)}</div>
+<div>Tel: <a href="tel:${tel}" style="color:#077a70;text-decoration:none">${escapeHtml(signaturePhone)}</a></div>
+${site.contact.email ? `<div>Email: <a href="mailto:${site.contact.email}" style="color:#077a70;text-decoration:none">${escapeHtml(site.contact.email)}</a></div>` : ""}
+<div><a href="${siteUrl}" style="color:#077a70;text-decoration:none">${escapeHtml(siteHost)}</a></div>
+</td></tr></table>`;
+}
+
 function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -67,7 +88,7 @@ function toHtml(text: string) {
 <img src="${siteUrl}/brand/bdim-mark-128.png" width="36" height="36" alt="" style="vertical-align:middle;background:#fff;border-radius:8px;padding:3px">
 <span style="vertical-align:middle;margin-left:10px;color:#ffffff;font-weight:800;font-size:17px">Big Data <span style="color:#3cbf71">IQ</span> Minds</span>
 </td></tr>
-<tr><td style="padding:24px;font-size:15px">${body}</td></tr>
+<tr><td style="padding:24px;font-size:15px">${body}${signatureHtml()}</td></tr>
 <tr><td style="padding:14px 24px;border-top:1px solid #e2e7ee;font-size:12px;color:#4d5f7a">${escapeHtml(site.legalName)} · ${escapeHtml(site.location)} · <a href="${siteUrl}" style="color:#077a70">${siteUrl.replace(/^https?:\/\//, "")}</a></td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -77,13 +98,13 @@ export async function sendEmail(to: string, subject: string, text: string, reply
   if (!kind || !to) return false;
   try {
     if (kind === "smtp") {
-      await smtp().sendMail({ from: fromAddress(), to, subject, text, html: toHtml(text), replyTo });
+      await smtp().sendMail({ from: fromAddress(), to, subject, text: `${text}\n\n${signatureText()}`, html: toHtml(text), replyTo });
       return true;
     }
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: fromAddress(), to: [to], subject, text, html: toHtml(text), reply_to: replyTo }),
+      body: JSON.stringify({ from: fromAddress(), to: [to], subject, text: `${text}\n\n${signatureText()}`, html: toHtml(text), reply_to: replyTo }),
     });
     return res.ok;
   } catch (err) {
