@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, Clock, Database, Download, ExternalLink, FileText, Film, Lock, Presentation, Search, ShoppingCart } from "lucide-react";
+import { BookOpen, BookOpenText, Clock, Database, Download, Eye, ExternalLink, FileText, Film, Lock, Presentation, Search, ShoppingCart } from "lucide-react";
 import type { LibraryItem, LibraryKind, LibraryOrderStatus, PaymentSettings } from "@/lib/types";
-import { placeLibraryOrder } from "@/app/actions/library";
+import { getLibraryPreview, placeLibraryOrder } from "@/app/actions/library";
+import { useRouter } from "next/navigation";
+import { BookViewer, type ViewerFile } from "./book-viewer";
 import { useLearner } from "@/lib/learner/provider";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +101,8 @@ function BuyForm({ item, payment, onDone }: { item: LibraryItem; payment: Paymen
 
 export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem[]; courses: { id: string; slug: string; title: string }[]; payment: PaymentSettings }) {
   const { mode, state, user } = useLearner();
+  const router = useRouter();
+  const [viewer, setViewer] = useState<(ViewerFile & { itemId: string }) | null>(null);
   const [orders, setOrders] = useState<Record<string, LibraryOrderStatus>>({});
   const [buying, setBuying] = useState<string | null>(null);
   const loadOrders = useCallback(async () => {
@@ -156,8 +160,41 @@ export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem
     else window.open(data.signedUrl, "_blank", "noopener");
   }
 
+  const isPdf = (it: LibraryItem) => Boolean(it.filePath) && /\.pdf$/i.test(it.fileName || it.filePath);
+
+  /** Opens the in-site reader: the whole file, or the first pages of a paid book. */
+  async function read(it: LibraryItem) {
+    setBusy(it.id);
+    setMessages((m) => ({ ...m, [it.id]: "" }));
+    const res = await getLibraryPreview(it.id);
+    setBusy(null);
+    if (!res.ok) {
+      if (res.signIn) router.push("/sign-in?next=/library");
+      else setMessages((m) => ({ ...m, [it.id]: res.message }));
+      return;
+    }
+    setViewer(
+      res.full
+        ? { itemId: it.id, title: it.title, url: res.url, full: true, downloadUrl: res.downloadUrl }
+        : { itemId: it.id, title: it.title, url: res.url, full: false, pages: res.pages, totalPages: res.totalPages, price: formatPrice(it.price, it.currency) },
+    );
+  }
+
+  function buyFromViewer() {
+    const id = viewer?.itemId;
+    setViewer(null);
+    if (!id) return;
+    if (!signedIn) {
+      router.push("/sign-in?next=/library");
+      return;
+    }
+    setBuying(id);
+    requestAnimationFrame(() => document.getElementById(`lib-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+  }
+
   return (
     <div>
+      {viewer ? <BookViewer file={viewer} onClose={() => setViewer(null)} onBuy={orders[viewer.itemId] === "pending" ? undefined : buyFromViewer} /> : null}
       <div className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-[1fr_12rem]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
@@ -182,7 +219,7 @@ export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem
             const a = access(it);
             const c = course(it.courseId);
             return (
-              <li key={it.id} className="flex flex-col rounded-2xl border border-line bg-white p-5">
+              <li key={it.id} id={`lib-${it.id}`} className="flex scroll-mt-24 flex-col rounded-2xl border border-line bg-white p-5">
                 <div className="flex items-start gap-3">
                   <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-700">
                     <K.icon className="size-5" aria-hidden />
@@ -198,6 +235,20 @@ export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem
                 </div>
                 {it.description ? <p className="mt-3 text-sm leading-relaxed text-muted">{it.description}</p> : null}
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                  {isPdf(it) && (a.ok || it.price > 0) ? (
+                    <button
+                      type="button"
+                      onClick={() => void read(it)}
+                      disabled={busy === it.id}
+                      className={cn(
+                        "inline-flex h-9 items-center gap-2 rounded-xl border border-line px-3.5 text-sm font-semibold text-navy-900 hover:border-teal-400 hover:bg-surface",
+                        busy === it.id && "opacity-60",
+                      )}
+                    >
+                      {a.ok ? <BookOpenText className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+                      {busy === it.id ? "Opening…" : a.ok ? "Read" : "Preview 5 pages"}
+                    </button>
+                  ) : null}
                   {a.ok ? (
                     <button
                       type="button"
@@ -206,7 +257,7 @@ export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem
                       className={cn("inline-flex h-9 items-center gap-2 rounded-xl bg-teal-600 px-3.5 text-sm font-semibold text-white hover:bg-teal-700", busy === it.id && "opacity-60")}
                     >
                       {it.externalUrl ? <ExternalLink className="size-4" aria-hidden /> : <Download className="size-4" aria-hidden />}
-                      {busy === it.id ? "Opening…" : it.externalUrl ? "Open" : it.kind === "video" ? "Watch" : "Download"}
+                      {it.externalUrl ? "Open" : it.kind === "video" ? "Watch" : "Download"}
                     </button>
                   ) : a.pending ? (
                     <span className="inline-flex h-9 items-center gap-2 rounded-xl bg-amber-50 px-3.5 text-sm font-semibold text-amber-800">
