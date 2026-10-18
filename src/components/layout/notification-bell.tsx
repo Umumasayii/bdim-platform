@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Inbox,
   Library,
+  Mail,
   ShoppingBag,
   X,
   type LucideIcon,
@@ -40,6 +41,7 @@ const icons: Record<string, LucideIcon> = {
   staff_submission: FileUp,
   staff_enrollment_request: GraduationCap,
   staff_order: ShoppingBag,
+  message: Mail,
 };
 
 function timeAgo(iso: string, now: number) {
@@ -201,7 +203,7 @@ export function NotificationBell() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className={cn("block text-sm text-navy-900", !n.readAt && "font-semibold")}>{n.title}</span>
-                            {n.body ? <span className="mt-0.5 line-clamp-2 block text-sm text-muted">{n.body}</span> : null}
+                            {n.body ? <span className={cn("mt-0.5 block text-sm text-muted", n.kind === "message" ? "line-clamp-[8] whitespace-pre-line" : "line-clamp-2")}>{n.body}</span> : null}
                             <span className="mt-1 block text-xs text-muted">{timeAgo(n.createdAt, now)}</span>
                           </span>
                           {!n.readAt ? <span className="mt-2 size-2 shrink-0 rounded-full bg-teal-600" aria-label="Unread" /> : null}

@@ -8,6 +8,7 @@ import { consultingServices } from "@/content/services";
 import { labExercises } from "@/content/exercises";
 import { getInstructors, getPublishedCourses, getPublishedPaths, getPublishedQuestions, getPublishedTestimonials } from "@/lib/data/content";
 import { site } from "@/lib/site";
+import { getCourseBooks } from "@/lib/data/library";
 import { Container, Eyebrow, SectionHeading } from "@/components/ui/layout";
 import { Collapsible } from "@/components/ui/collapsible";
 import { ButtonLink } from "@/components/ui/button";
@@ -22,12 +23,13 @@ import { Faq } from "@/components/home/faq";
 import { EcosystemIcon } from "@/components/home/ecosystem-icon";
 
 export default async function HomePage() {
-  const [courses, paths, questions, instructors, testimonials] = await Promise.all([
+  const [courses, paths, questions, instructors, testimonials, books] = await Promise.all([
     getPublishedCourses(),
     getPublishedPaths(),
     getPublishedQuestions(),
     getInstructors(),
     getPublishedTestimonials(),
+    getCourseBooks(),
   ]);
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
   const featuredCourses = courses.filter((c) => c.featured).slice(0, 6);
@@ -243,7 +245,7 @@ export default async function HomePage() {
           <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featuredCourses.map((c) => (
               <li key={c.id}>
-                <CourseCard course={c} />
+                <CourseCard course={c} books={books[c.id]} />
               </li>
             ))}
           </ul>

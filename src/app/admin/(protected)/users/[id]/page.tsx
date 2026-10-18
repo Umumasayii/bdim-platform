@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/layout";
 import { SubmissionGrader } from "@/components/admin/grading";
+import { MemberActions } from "@/components/admin/member-actions";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "User" };
 
 export default async function AdminUserPage({ params }: PageProps<"/admin/users/[id]">) {
   await connection();
-  await requireStaffPage({ adminOnly: true });
+  const viewer = await requireStaffPage({ adminOnly: true });
   if (!isSupabaseConfigured) notFound();
   const { id } = await params;
   const u = await getUserDetail(id);
@@ -49,6 +50,9 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             Practice: {u.attempts.correct}/{u.attempts.total} correct
           </Badge>
           <Badge tone="green">{u.certificates.length} certificates</Badge>
+        </div>
+        <div className="w-full border-t border-line pt-4">
+          <MemberActions user={{ id: u.id, email: u.email, name }} canRemove={u.id !== viewer.id && u.role !== "admin"} afterRemove="/admin/users" />
         </div>
       </header>
 

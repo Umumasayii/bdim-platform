@@ -24,8 +24,15 @@ export const site = {
   // Public contact details (environment variables override these if set).
   contact: {
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "brancharich@gmail.com",
-    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "",
-    whatsapp: process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || "+250 782 220 588",
+    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "+250 787 884 835",
+    whatsapp: process.env.NEXT_PUBLIC_CONTACT_WHATSAPP || "+250 782 220 599",
+  },
+  /** wa.me / tel: forms of the numbers above. */
+  get links() {
+    return {
+      whatsapp: this.contact.whatsapp ? `https://wa.me/${this.contact.whatsapp.replace(/\D/g, "")}` : "",
+      call: this.contact.phone ? `tel:${this.contact.phone.replace(/[^\d+]/g, "")}` : "",
+    };
   },
   social: [{ label: "LinkedIn", url: "https://www.linkedin.com/in/niyobyose-brancal-901841409/" }],
   logo: { full: "/brand/bdim-logo.png", mark: "/brand/bdim-mark.png" },

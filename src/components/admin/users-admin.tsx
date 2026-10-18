@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/field";
 import { formatDate } from "@/lib/utils";
 import { useAdminAction } from "./admin-ui";
+import { MemberActions } from "./member-actions";
 
 export function UsersTable({ users, courses, currentUserId }: { users: UserRow[]; courses: { id: string; title: string }[]; currentUserId: string }) {
   const [q, setQ] = useState("");
@@ -116,6 +117,9 @@ function UserCard({ user, courses, isSelf }: { user: UserRow; courses: { id: str
         <Link href={`/admin/users/${user.id}`} className="ml-auto text-sm font-semibold text-teal-700 hover:underline">
           View progress →
         </Link>
+      </div>
+      <div className="mt-3 border-t border-line pt-3">
+        <MemberActions user={{ id: user.id, email: user.email, name: user.fullName || user.email }} canRemove={!isSelf && user.role !== "admin"} />
       </div>
     </li>
   );

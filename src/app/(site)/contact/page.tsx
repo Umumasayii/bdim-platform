@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { site } from "@/lib/site";
 import { Container, PageHeader } from "@/components/ui/layout";
+import { buttonClass } from "@/components/ui/button";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 
 export const metadata: Metadata = {
@@ -25,38 +26,26 @@ export default function ContactPage() {
               <p className="text-sm text-muted">{site.location}</p>
             </div>
           </div>
-          {email ? (
-            <a href={`mailto:${email}`} className="flex gap-3 rounded-2xl border border-line bg-white p-5 hover:border-teal-300">
-              <Mail className="mt-0.5 size-5 text-teal-600" aria-hidden />
-              <div>
-                <p className="font-semibold text-navy-950">Email</p>
-                <p className="text-sm text-muted">{email}</p>
-              </div>
-            </a>
-          ) : null}
-          {phone ? (
-            <a href={`tel:${phone.replace(/\s/g, "")}`} className="flex gap-3 rounded-2xl border border-line bg-white p-5 hover:border-teal-300">
-              <Phone className="mt-0.5 size-5 text-teal-600" aria-hidden />
-              <div>
-                <p className="font-semibold text-navy-950">Phone</p>
-                <p className="text-sm text-muted">{phone}</p>
-              </div>
-            </a>
-          ) : null}
-          {whatsapp ? (
-            <a
-              href={`https://wa.me/${whatsapp.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex gap-3 rounded-2xl border border-line bg-white p-5 hover:border-teal-300"
-            >
-              <MessageCircle className="mt-0.5 size-5 text-teal-600" aria-hidden />
-              <div>
-                <p className="font-semibold text-navy-950">WhatsApp</p>
-                <p className="text-sm text-muted">{whatsapp}</p>
-              </div>
-            </a>
-          ) : null}
+          <div className="rounded-2xl border border-line bg-white p-5">
+            <p className="font-semibold text-navy-950">Reach us directly</p>
+            <div className="mt-3 grid gap-2">
+              {whatsapp ? (
+                <a href={site.links.whatsapp} target="_blank" rel="noopener noreferrer" className={buttonClass("teal", "md", "w-full justify-center")}>
+                  <MessageCircle className="size-4" aria-hidden /> Chat on WhatsApp
+                </a>
+              ) : null}
+              {phone ? (
+                <a href={site.links.call} className={buttonClass("primary", "md", "w-full justify-center")}>
+                  <Phone className="size-4" aria-hidden /> Call {phone}
+                </a>
+              ) : null}
+              {email ? (
+                <a href={`mailto:${email}`} className={buttonClass("outline", "md", "w-full justify-center")}>
+                  <Mail className="size-4" aria-hidden /> Send an email
+                </a>
+              ) : null}
+            </div>
+          </div>
           <div className="rounded-2xl border border-line bg-surface p-5 text-sm text-muted">
             Looking for something specific? Try{" "}
             <Link href="/corporate-training" className="font-medium text-teal-700 underline">

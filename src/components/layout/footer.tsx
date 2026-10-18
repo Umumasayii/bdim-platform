@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Mail, MessageCircle, Phone } from "lucide-react";
 import { site } from "@/lib/site";
 import { Container } from "@/components/ui/layout";
 import { Logo } from "./logo";
@@ -45,19 +46,21 @@ export function Footer() {
           <Logo inverted />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-navy-200">{site.tagline}</p>
           <p className="mt-2 text-sm text-navy-300">{site.location}</p>
-          {site.contact.email ? (
-            <a href={`mailto:${site.contact.email}`} className="mt-2 block text-sm text-teal-200 hover:text-white">
-              {site.contact.email}
-            </a>
-          ) : null}
-          {site.contact.whatsapp ? (
-            <a
-              href={`https://wa.me/${site.contact.whatsapp.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 block text-sm text-teal-200 hover:text-white"
-            >
-              WhatsApp {site.contact.whatsapp}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {site.contact.whatsapp ? (
+              <a href={site.links.whatsapp} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-teal-600 px-3 text-sm font-semibold text-white hover:bg-teal-700">
+                <MessageCircle className="size-4" aria-hidden /> WhatsApp
+              </a>
+            ) : null}
+            {site.contact.email ? (
+              <a href={`mailto:${site.contact.email}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-navy-700 px-3 text-sm font-semibold text-white hover:bg-navy-900">
+                <Mail className="size-4" aria-hidden /> Email
+              </a>
+            ) : null}
+          </div>
+          {site.contact.phone ? (
+            <a href={site.links.call} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-200 hover:text-white">
+              <Phone className="size-4" aria-hidden /> Call {site.contact.phone}
             </a>
           ) : null}
           {site.social.length ? (

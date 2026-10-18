@@ -36,6 +36,15 @@ export async function getPublishedLibrary(): Promise<LibraryItem[]> {
   return (data ?? []).map(fromRow);
 }
 
+/** Titles of published books linked to each course, keyed by course id. */
+export async function getCourseBooks(): Promise<Record<string, string[]>> {
+  const books: Record<string, string[]> = {};
+  for (const item of await getPublishedLibrary()) {
+    if (item.kind === "book" && item.courseId) (books[item.courseId] ??= []).push(item.title);
+  }
+  return books;
+}
+
 /** All items, including drafts (staff session required). */
 export async function getAllLibraryItems(): Promise<LibraryItem[]> {
   if (!isSupabaseConfigured) return [];

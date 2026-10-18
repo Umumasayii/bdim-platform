@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { categories } from "@/content/categories";
 import { getPublishedCourses } from "@/lib/data/content";
+import { getCourseBooks } from "@/lib/data/library";
 import { Container, PageHeader } from "@/components/ui/layout";
 import { CourseCatalog } from "@/components/courses/course-catalog";
 import { CourseCard } from "@/components/courses/course-card";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CoursesPage() {
-  const courses = await getPublishedCourses();
+  const [courses, books] = await Promise.all([getPublishedCourses(), getCourseBooks()]);
   return (
     <>
       <PageHeader
@@ -28,13 +29,13 @@ export default async function CoursesPage() {
             <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {courses.map((c) => (
                 <li key={c.id}>
-                  <CourseCard course={c} />
+                  <CourseCard course={c} books={books[c.id]} />
                 </li>
               ))}
             </ul>
           }
         >
-          <CourseCatalog courses={courses} categories={categories} />
+          <CourseCatalog courses={courses} categories={categories} books={books} />
         </Suspense>
       </Container>
     </>

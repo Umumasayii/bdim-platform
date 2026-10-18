@@ -121,6 +121,7 @@
   /* Card and panel surfaces */
   .dark .bg-white { background-color: #0f2140; }
   .dark .bg-white\/90 { background-color: rgb(8 20 39 / 0.9); }
+  .dark .bg-white\/95 { background-color: rgb(8 20 39 / 0.95); }
   .dark .supports-\[backdrop-filter\]\:bg-white\/75 { background-color: rgb(8 20 39 / 0.75); }
   .dark .border-line\/80 { border-color: #223a5e; }
   .dark .bg-navy-50, .dark .bg-navy-50\/60 { background-color: #163057; }

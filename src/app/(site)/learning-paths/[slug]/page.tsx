@@ -4,6 +4,7 @@ import { PageSkeleton } from "@/components/ui/skeleton";
 import { notFound } from "next/navigation";
 import { CheckCircle2, ClipboardList } from "lucide-react";
 import { getPublishedCourses, getPublishedPaths } from "@/lib/data/content";
+import { getCourseBooks } from "@/lib/data/library";
 import { Container, PageHeader } from "@/components/ui/layout";
 import { Badge, levelTone } from "@/components/ui/badge";
 import { CourseCard } from "@/components/courses/course-card";
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: PageProps<"/learning-paths/[s
 
 async function PathPage({ params }: { params: PageProps<"/learning-paths/[slug]">["params"] }) {
   const { slug } = await params;
-  const [paths, courses] = await Promise.all([getPublishedPaths(), getPublishedCourses()]);
+  const [paths, courses, books] = await Promise.all([getPublishedPaths(), getPublishedCourses(), getCourseBooks()]);
   const path = paths.find((p) => p.slug === slug);
   if (!path) notFound();
   const list = path.courseSlugs.map((s) => courses.find((c) => c.slug === s)).filter((c) => c !== undefined);
@@ -44,7 +45,7 @@ async function PathPage({ params }: { params: PageProps<"/learning-paths/[slug]"
             {list.map((c, i) => (
               <li key={c.slug} className="relative">
                 <span className="absolute -left-2 -top-2 z-10 grid size-7 place-items-center rounded-full bg-navy-800 text-xs font-bold text-white">{i + 1}</span>
-                <CourseCard course={c} />
+                <CourseCard course={c} books={books[c.id]} />
               </li>
             ))}
           </ol>

@@ -12,7 +12,7 @@ import { checkLocalAdminPassword, createLocalAdminToken, LOCAL_ADMIN_COOKIE } fr
 import { requireStaff } from "@/lib/auth/viewer";
 import { rateLimit } from "@/lib/rate-limit";
 import { createServiceClient, createUserClient } from "@/lib/supabase/server";
-import { sendEmail } from "@/lib/email";
+import { emailConfigured, sendEmail } from "@/lib/email";
 import { dispatchNotificationEmails } from "@/lib/notifications";
 import type {
   BookableService,
@@ -369,4 +369,65 @@ export async function savePaymentSettings(input: PaymentSettings): Promise<Admin
   if (error) return { ok: false, message: error.message };
   updateTag(PAYMENT_TAG);
   return { ok: true, message: "Payment details saved." };
+}
+
+// ───────── Messaging and removing members (admin only, Supabase) ─────────
+async function adminViewer() {
+  try {
+    return await requireStaff({ adminOnly: true });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Send one member an email written by the admin. "{name}" in the subject or
+ * message becomes their first name. Optionally also shows it in their bell.
+ */
+export async function messageUser(input: { userId: string; subject: string; body: string; notify: boolean }): Promise<AdminResult> {
+  const viewer = await adminViewer();
+  if (!viewer) return { ok: false, message: "Administrator access is required." };
+  if (!isSupabaseConfigured) return { ok: false, message: "Messaging requires Supabase." };
+  const subject = input.subject.trim().slice(0, 200);
+  const body = input.body.trim().slice(0, 10_000);
+  if (!subject) return { ok: false, message: "Add a subject." };
+  if (!body) return { ok: false, message: "Write a message." };
+  if (!emailConfigured()) return { ok: false, message: "Email isn't configured on the server (SMTP settings)." };
+
+  const db = createServiceClient();
+  const [{ data: auth }, { data: profile }] = await Promise.all([
+    db.auth.admin.getUserById(input.userId),
+    db.from("profiles").select("full_name").eq("id", input.userId).maybeSingle(),
+  ]);
+  const email = auth.user?.email;
+  if (!email) return { ok: false, message: "This member has no email address." };
+  const firstName = ((profile?.full_name as string) || "").trim().split(/\s+/)[0] || email.split("@")[0];
+  const fill = (s: string) => s.replaceAll("{name}", firstName);
+
+  const sent = await sendEmail(email, fill(subject), fill(body), viewer.email || undefined);
+  if (!sent) return { ok: false, message: "The email could not be sent. Check the SMTP settings and try again." };
+  if (input.notify) {
+    await db.from("notifications").insert({ user_id: input.userId, kind: "message", title: fill(subject), body: fill(body).slice(0, 2000), link: "", email: false });
+  }
+  return { ok: true, message: `Email sent to ${email}.` };
+}
+
+/** Permanently delete a member's account and everything linked to it. Admins must be demoted first. */
+export async function removeUser(userId: string): Promise<AdminResult> {
+  const viewer = await adminViewer();
+  if (!viewer) return { ok: false, message: "Administrator access is required." };
+  if (!isSupabaseConfigured) return { ok: false, message: "User management requires Supabase." };
+  if (userId === viewer.id) return { ok: false, message: "You can't remove your own account." };
+  const db = createServiceClient();
+  const { data: role } = await db.from("staff_roles").select("role").eq("user_id", userId).maybeSingle();
+  if (role?.role === "admin") return { ok: false, message: "Change this person's role to Learner before removing them." };
+
+  // Their uploaded files (database rows are removed by ON DELETE CASCADE).
+  const { data: files } = await db.from("assignment_submissions").select("file_path").eq("user_id", userId).neq("file_path", "");
+  const paths = (files ?? []).map((f) => f.file_path as string);
+  if (paths.length) await db.storage.from("submissions").remove(paths);
+  await db.storage.from("avatars").remove([`${userId}/avatar.jpg`]);
+
+  const { error } = await db.auth.admin.deleteUser(userId);
+  return error ? { ok: false, message: error.message } : { ok: true, message: "Member removed." };
 }

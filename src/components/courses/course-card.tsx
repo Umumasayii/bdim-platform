@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { ArrowUpRight, Clock, Layers } from "lucide-react";
+import { ArrowUpRight, BookOpen, Layers } from "lucide-react";
 import { categories } from "@/content/categories";
 import type { Course } from "@/lib/types";
 import { Badge, levelTone } from "@/components/ui/badge";
 import { courseLessonCount } from "@/lib/data/sanitize";
 import { pricingLabel } from "./pricing";
 
-export function CourseCard({ course }: { course: Course }) {
+/** `books`: titles of library books linked to this course. */
+export function CourseCard({ course, books = [] }: { course: Course; books?: string[] }) {
   const category = categories.find((c) => c.id === course.category);
   const sample = course.modules.flatMap((m) => m.lessons).find((l) => l.isSample);
   return (
@@ -21,13 +22,11 @@ export function CourseCard({ course }: { course: Course }) {
         </Link>
       </h3>
       <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">{course.summary}</p>
-      <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Skills covered">
-        {course.skills.slice(0, 3).map((s) => (
-          <li key={s}>
-            <Badge>{s}</Badge>
-          </li>
-        ))}
-      </ul>
+      {books.length ? (
+        <p className="relative z-10 mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-leaf-50 px-2.5 py-1 text-xs font-semibold text-leaf-700" title={books.join(", ")}>
+          <BookOpen className="size-3.5" aria-hidden /> {books.length === 1 ? "Course book available" : `${books.length} course books available`}
+        </p>
+      ) : null}
       <div className="mt-auto pt-5">
         <p className="text-xs text-muted">
           <span className="font-medium text-navy-800">Prerequisites:</span> {course.prerequisites[0] ?? "None"}
@@ -35,9 +34,6 @@ export function CourseCard({ course }: { course: Course }) {
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line pt-3 text-xs text-muted">
           <span className="inline-flex items-center gap-1">
             <Layers className="size-3.5" aria-hidden /> {course.modules.length} modules · {courseLessonCount(course)} lessons
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <Clock className="size-3.5" aria-hidden /> {course.duration}
           </span>
         </div>
         <div className="mt-3 flex items-center justify-between text-sm">

@@ -3,9 +3,10 @@ import { Suspense } from "react";
 import { PageSkeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, ChevronDown, ClipboardCheck, FileText, Lock, PlayCircle } from "lucide-react";
+import { Award, BookOpen, CheckCircle2, ChevronDown, ClipboardCheck, FileText, Lock, PlayCircle } from "lucide-react";
 import { categories } from "@/content/categories";
 import { getCourseBySlug, getPublishedCourses } from "@/lib/data/content";
+import { getPublishedLibrary } from "@/lib/data/library";
 import { courseLessonCount, courseMinutes } from "@/lib/data/sanitize";
 import { Container, Eyebrow } from "@/components/ui/layout";
 import { Badge, levelTone } from "@/components/ui/badge";
@@ -31,8 +32,10 @@ export async function generateMetadata({ params }: PageProps<"/courses/[slug]">)
 
 async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["params"] }) {
   const { slug } = await params;
-  const course = await getCourseBySlug(slug);
+  const [course, library] = await Promise.all([getCourseBySlug(slug), getPublishedLibrary()]);
   if (!course) notFound();
+  const books = library.filter((i) => i.kind === "book" && i.courseId === course.id);
+  const deliverables = course.modules.flatMap((m) => (m.assignment ? [m.assignment.title] : []));
   const category = categories.find((c) => c.id === course.category);
   const hours = Math.round(courseMinutes(course) / 60);
 
@@ -58,9 +61,11 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
             </nav>
             <div className="mt-4 flex flex-wrap gap-2">
               <Badge tone={levelTone(course.level)}>{course.level}</Badge>
-              {course.tools.map((t) => (
-                <Badge key={t}>{t}</Badge>
-              ))}
+              {books.length ? (
+                <Badge tone="green">
+                  <BookOpen className="size-3.5" aria-hidden /> Course book available
+                </Badge>
+              ) : null}
             </div>
             <h1 className="mt-4 max-w-3xl text-4xl font-bold text-navy-950 sm:text-5xl">{course.title}</h1>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">{course.summary}</p>
@@ -80,7 +85,7 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
 
           <section className="grid gap-8 md:grid-cols-2">
             <div>
-              <h2 className="text-lg font-bold text-navy-950">Learning objectives</h2>
+              <h2 className="text-lg font-bold text-navy-950">What you&apos;ll achieve</h2>
               <ul className="mt-3 grid gap-2">
                 {course.objectives.map((o) => (
                   <li key={o} className="flex gap-2 text-sm text-navy-900">
@@ -89,17 +94,24 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
                 ))}
               </ul>
             </div>
-            <div className="grid gap-6">
-              <div>
-                <h2 className="text-lg font-bold text-navy-950">Skills covered</h2>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {course.skills.map((s) => (
-                    <Badge key={s} tone="teal">
-                      {s}
-                    </Badge>
-                  ))}
+            <div className="grid content-start gap-6">
+              {deliverables.length || course.certificate.enabled ? (
+                <div>
+                  <h2 className="text-lg font-bold text-navy-950">What you&apos;ll deliver</h2>
+                  <ul className="mt-3 grid gap-2">
+                    {deliverables.map((d) => (
+                      <li key={d} className="flex gap-2 text-sm text-navy-900">
+                        <FileText className="mt-0.5 size-4 shrink-0 text-teal-600" aria-hidden /> {d}
+                      </li>
+                    ))}
+                    {course.certificate.enabled ? (
+                      <li className="flex gap-2 text-sm text-navy-900">
+                        <Award className="mt-0.5 size-4 shrink-0 text-teal-600" aria-hidden /> Certificate of completion
+                      </li>
+                    ) : null}
+                  </ul>
                 </div>
-              </div>
+              ) : null}
               <div>
                 <h2 className="text-lg font-bold text-navy-950">Prerequisites</h2>
                 <ul className="mt-2 grid gap-1 text-sm text-muted">
@@ -110,6 +122,25 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
               </div>
             </div>
           </section>
+
+          {books.length ? (
+            <section className="rounded-2xl border border-leaf-200 bg-leaf-50 p-6">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-navy-950">
+                <BookOpen className="size-5 text-leaf-600" aria-hidden /> Course {books.length === 1 ? "book" : "books"} available
+              </h2>
+              <ul className="mt-3 grid gap-2">
+                {books.map((b) => (
+                  <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-semibold text-navy-900">{b.title}</span>
+                    <span className="text-muted">{b.price > 0 ? `${b.price.toLocaleString("en-US")} ${b.currency}` : "Free"}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/library" className="mt-4 inline-block text-sm font-semibold text-teal-700 hover:underline">
+                Get it from the library →
+              </Link>
+            </section>
+          ) : null}
 
           <section aria-labelledby="curriculum">
             <h2 id="curriculum" className="text-2xl font-bold text-navy-950">

@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/ui/layout";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "./course-card";
 
-export function CourseCatalog({ courses, categories }: { courses: Course[]; categories: Category[] }) {
+export function CourseCatalog({ courses, categories, books = {} }: { courses: Course[]; categories: Category[]; books?: Record<string, string[]> }) {
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -115,7 +115,7 @@ export function CourseCatalog({ courses, categories }: { courses: Course[]; cate
               <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {items.map((c) => (
                   <li key={c.id}>
-                    <CourseCard course={c} />
+                    <CourseCard course={c} books={books[c.id]} />
                   </li>
                 ))}
               </ul>
