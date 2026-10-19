@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { BarChart3, BookOpen, CalendarDays, ClipboardCheck, GraduationCap, HelpCircle, Inbox, LayoutDashboard, Library, LogOut, Map, MessageSquareQuote, UserRound, Users } from "lucide-react";
 import { localAdminLogout } from "@/app/actions/admin";
 import { useLearner } from "@/lib/learner/provider";
@@ -29,9 +30,18 @@ const nav: { href: string; label: string; icon: typeof BookOpen; adminOnly?: boo
 export function AdminShell({ viewer, children }: { viewer: { name: string; role: Role; local: boolean }; children: React.ReactNode }) {
   const pathname = usePathname();
   const { signOut } = useLearner();
+  const main = useRef<HTMLElement>(null);
+  // The content box scrolls on its own (large screens): start each admin page at its top.
+  useEffect(() => {
+    const target = window.location.hash ? document.getElementById(decodeURIComponent(window.location.hash.slice(1))) : null;
+    if (target) target.scrollIntoView();
+    else main.current?.scrollTo({ top: 0 });
+  }, [pathname]);
   return (
-    <div className="grid grid-cols-1 flex-1 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <aside className="border-b border-line bg-navy-950 text-navy-100 lg:border-b-0 lg:border-r">
+    // Large screens: exactly one screen tall. The sidebar stays put and the
+    // content scrolls inside its own box. Phones: one normal scrolling page.
+    <div className="grid grid-cols-1 flex-1 lg:h-dvh lg:grid-cols-[15rem_minmax(0,1fr)] lg:overflow-hidden">
+      <aside className="border-b border-line bg-navy-950 text-navy-100 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:overscroll-contain lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 px-5 py-5">
           <LogoMark className="size-9" onDark />
           <span className="text-sm font-bold text-white">BDIM Admin</span>
@@ -60,7 +70,7 @@ export function AdminShell({ viewer, children }: { viewer: { name: string; role:
               })}
           </ul>
         </nav>
-        <div className="hidden border-t border-white/10 px-5 py-4 text-xs lg:block">
+        <div className="hidden border-t border-white/10 px-5 py-4 text-xs lg:mt-auto lg:block">
           <p className="font-medium text-white">{viewer.name}</p>
           <p className="capitalize text-navy-300">{viewer.local ? "Local dev admin" : viewer.role}</p>
           <div className="mt-3 flex gap-3">
@@ -81,7 +91,7 @@ export function AdminShell({ viewer, children }: { viewer: { name: string; role:
           </div>
         </div>
       </aside>
-      <main id="main" className="min-w-0 px-4 py-8 sm:px-8">
+      <main id="main" ref={main} tabIndex={-1} className="min-w-0 px-4 py-8 outline-none sm:px-8 lg:h-dvh lg:overflow-y-auto lg:overscroll-contain">
         {children}
       </main>
     </div>
