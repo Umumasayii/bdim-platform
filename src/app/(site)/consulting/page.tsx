@@ -36,7 +36,7 @@ export default function ConsultingPage() {
           ))}
         </ul>
 
-        <section id="inquiry" className="mt-20 grid scroll-mt-24 gap-10 lg:grid-cols-[1fr_1.4fr]">
+        <section id="inquiry" className="mt-20 grid grid-cols-1 scroll-mt-24 gap-10 lg:grid-cols-[minmax(0,1fr)_1.4fr]">
           <div>
             <SectionHeading eyebrow="Start a conversation" title="Tell us about your project" className="mb-6" />
             <p className="text-muted">

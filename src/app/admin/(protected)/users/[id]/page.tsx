@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/layout";
 import { SubmissionGrader } from "@/components/admin/grading";
 import { MemberActions } from "@/components/admin/member-actions";
 import { RoleControl } from "@/components/admin/role-control";
+import { formatLocation, genderLabel } from "@/lib/profile-options";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "User" };
@@ -44,6 +45,21 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
             {!u.confirmed ? " · email not confirmed" : ""}
           </p>
           {u.profile?.headline ? <p className="mt-2 text-sm text-navy-900">{u.profile.headline}</p> : null}
+          <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+            {[
+              ["Gender", u.profile?.gender ? genderLabel(u.profile.gender) : ""],
+              ["Location", formatLocation(u.profile ?? {})],
+              ["Occupation", u.profile?.occupation ?? ""],
+              ["Organization", u.profile?.organization ?? ""],
+              ["Phone", u.profile?.phone ?? ""],
+              ["Interests", (u.profile?.interests ?? []).join(", ")],
+            ].map(([k, v]) => (
+              <div key={k} className="flex gap-2">
+                <dt className="w-24 shrink-0 text-muted">{k}</dt>
+                <dd className="min-w-0 text-navy-900">{v || <span className="text-muted">—</span>}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge tone="navy">{u.role}</Badge>

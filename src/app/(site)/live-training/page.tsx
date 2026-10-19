@@ -19,7 +19,7 @@ export default async function LiveTrainingPage() {
         title="Learn live, one-to-one or with your team"
         description="Book a session for tutoring, interview practice, statistical advice or mentorship. Pricing is agreed with you before any session — it is negotiable until formally set."
       />
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_18rem]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <BookingFlow services={services} enabled={settings.enabled} />
         <aside className="grid content-start gap-4">
           {[

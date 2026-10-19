@@ -124,3 +124,23 @@ test("assignment deadlines are kept as ISO times and invalid ones are rejected",
   assert.equal(none.data.modules.find((m) => m.assignment)?.assignment?.dueAt, undefined);
   assert.equal(courseSchema.safeParse(withDue("next friday")).success, false);
 });
+
+test("location lists match the official counts and have no duplicates", async () => {
+  const { LOCATIONS, districtsOf } = await import("../src/lib/locations");
+  const count = (c: string) => LOCATIONS[c].divisions.length;
+  assert.equal(count("Rwanda"), 5);
+  assert.equal(LOCATIONS.Rwanda.divisions.flatMap((d) => d.districts ?? []).length, 30);
+  assert.deepEqual(districtsOf("Rwanda", "Kigali City"), ["Gasabo", "Kicukiro", "Nyarugenge"]);
+  assert.equal(count("Kenya"), 47);
+  assert.equal(count("Tanzania"), 31);
+  assert.equal(count("DR Congo"), 26);
+  assert.equal(count("Nigeria"), 37); // 36 states + the Federal Capital Territory
+  assert.equal(count("Ghana"), 16);
+  assert.equal(count("South Africa"), 9);
+  for (const [country, c] of Object.entries(LOCATIONS)) {
+    const names = c.divisions.map((d) => d.name);
+    assert.equal(new Set(names).size, names.length, `${country} has a duplicate division`);
+    const districts = c.divisions.flatMap((d) => d.districts ?? []);
+    assert.equal(new Set(districts).size, districts.length, `${country} has a duplicate district`);
+  }
+});

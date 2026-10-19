@@ -70,7 +70,7 @@ function AccountMenu({ compact = false }: { compact?: boolean }) {
             </div>
             {state.role ? (
               <Link role="menuitem" href="/admin" className="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-teal-700 hover:bg-surface" onClick={() => setOpen(false)}>
-                <ShieldCheck className="size-4" aria-hidden /> Admin panel
+                <ShieldCheck className="size-4" aria-hidden /> {state.role === "admin" ? "Admin panel" : "Instructor panel"}
               </Link>
             ) : null}
             <Link role="menuitem" href="/dashboard" className={cn("flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-surface", !state.role && "mt-1")} onClick={() => setOpen(false)}>
@@ -112,7 +112,7 @@ function AdminLink() {
   if (!state.role) return null;
   return (
     <Link href="/admin" className="flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full bg-teal-600 px-3 text-sm font-semibold text-white hover:bg-teal-700">
-      <ShieldCheck className="size-4" aria-hidden /> Admin
+      <ShieldCheck className="size-4" aria-hidden /> {state.role === "admin" ? "Admin" : "Instructor panel"}
     </Link>
   );
 }
@@ -207,8 +207,8 @@ function HeaderView({ pathname }: { pathname: string }) {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-navy-900 focus:px-3 focus:py-2 focus:text-white">
         Skip to content
       </a>
-      <Container className="flex h-16 max-w-[96rem] items-center justify-between gap-3">
-        <Logo className="shrink-0" />
+      <Container className="flex h-16 max-w-[96rem] items-center justify-between gap-2 sm:gap-3">
+        <Logo compact className="shrink lg:shrink-0" />
         <nav aria-label="Main" className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {navGroups.map((g) => (
@@ -222,12 +222,12 @@ function HeaderView({ pathname }: { pathname: string }) {
           <NotificationBell />
           <AccountMenu />
         </div>
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:hidden">
           <NotificationBell />
           <ThemeToggle />
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-xl border border-line text-navy-900"
+            className="grid size-9 place-items-center rounded-xl border border-line text-navy-900 sm:size-10"
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}

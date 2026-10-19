@@ -54,7 +54,7 @@ function Check({ label, checked, onChange }: { label: string; checked: boolean; 
 function QuizEditor({ quiz, onChange }: { quiz: Quiz; onChange: (q: Quiz | undefined) => void }) {
   return (
     <div className="grid gap-3 rounded-xl border border-dashed border-line p-4">
-      <div className="grid gap-3 sm:grid-cols-[1fr_8rem]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
         <Field label="Quiz title" htmlFor={`${quiz.id}-t`}>
           <Input id={`${quiz.id}-t`} value={quiz.title} onChange={(e) => onChange({ ...quiz, title: e.target.value })} />
         </Field>
@@ -79,7 +79,7 @@ function QuizEditor({ quiz, onChange }: { quiz: Quiz; onChange: (q: Quiz | undef
               onChange={(e) => onChange({ ...quiz, questions: quiz.questions.map((x, i) => (i === qi ? { ...x, options: e.target.value.split("\n") } : x)) })}
             />
           </Field>
-          <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[10rem_minmax(0,1fr)]">
             <Field label="Correct option #" htmlFor={`${quiz.id}-${q.id}-a`}>
               <Input
                 id={`${quiz.id}-${q.id}-a`}
@@ -336,7 +336,7 @@ export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course;
                       </span>
                     </summary>
                     <div className="grid gap-3 border-t border-line p-4">
-                      <div className="grid gap-3 md:grid-cols-[1fr_8rem]">
+                      <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_8rem]">
                         <Field label="Title" htmlFor={`${l.id}-t`}>
                           <Input id={`${l.id}-t`} value={l.title} onChange={(e) => setLesson(mi, li, { ...l, title: e.target.value })} />
                         </Field>

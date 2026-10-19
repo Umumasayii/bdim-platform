@@ -16,6 +16,7 @@ import {
   Inbox,
   Library,
   Mail,
+  ShieldCheck,
   ShoppingBag,
   UserPlus,
   X,
@@ -44,6 +45,7 @@ const icons: Record<string, LucideIcon> = {
   staff_order: ShoppingBag,
   staff_new_user: UserPlus,
   message: Mail,
+  role_changed: ShieldCheck,
 };
 
 function timeAgo(iso: string, now: number) {

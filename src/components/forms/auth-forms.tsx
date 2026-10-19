@@ -3,12 +3,15 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field, Input, Select } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
+import { GENDERS, INTERESTS, OCCUPATIONS } from "@/lib/profile-options";
+import { LocationPicker } from "./location-picker";
 import { Notice } from "@/components/ui/notice";
 
 function safeNext(next: string | null) {
@@ -62,7 +65,7 @@ export function SignInForm() {
         <Input id="si-email" type="email" autoComplete="email" {...register("email")} aria-invalid={Boolean(formState.errors.email)} />
       </Field>
       <Field label="Password" htmlFor="si-password" error={formState.errors.password?.message}>
-        <Input id="si-password" type="password" autoComplete="current-password" {...register("password")} aria-invalid={Boolean(formState.errors.password)} />
+        <PasswordInput id="si-password" autoComplete="current-password" {...register("password")} aria-invalid={Boolean(formState.errors.password)} />
       </Field>
       <div className="flex items-center justify-between text-sm">
         <Link href="/forgot-password" className="font-medium text-teal-700 hover:underline">
@@ -86,6 +89,19 @@ const signUpSchema = z
   .object({
     fullName: z.string().trim().min(2, "Enter your name").max(120),
     email: z.email("Enter a valid email"),
+    gender: z.enum(["female", "male", "prefer_not_to_say"], { error: "Choose an option" }),
+    country: z.string().trim().min(2, "Choose your country").max(80),
+    province: z.string().trim().min(2, "Choose your province, county, region or state").max(80),
+    city: z.string().trim().min(2, "Choose or enter your district / city").max(80),
+    organization: z.string().trim().max(160).optional(),
+    occupation: z.string().max(80).optional(),
+    interests: z.array(z.string()).min(1, "Choose at least one").max(12),
+    phone: z
+      .string()
+      .trim()
+      .max(30)
+      .refine((v) => !v || /^[+\d][\d\s-]{6,}$/.test(v), "Enter a valid phone number (e.g. 078…)")
+      .optional(),
     password: z.string().min(10, "Use at least 10 characters"),
     confirm: z.string(),
     terms: z.literal(true, { error: "Please accept the terms and privacy policy" }),
@@ -97,7 +113,11 @@ export function SignUpForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  const { register, handleSubmit, formState } = useForm<z.input<typeof signUpSchema>>({ resolver: zodResolver(signUpSchema) });
+  const { register, handleSubmit, formState, control, setValue } = useForm<z.input<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { country: "", province: "", city: "", interests: [] },
+  });
+  const [country, province, city] = useWatch({ control, name: ["country", "province", "city"] });
   if (!db) return <NotConfigured />;
   if (sent) {
     return (
@@ -115,7 +135,20 @@ export function SignUpForm() {
         const { data, error: err } = await db.auth.signUp({
           email: v.email,
           password: v.password,
-          options: { data: { full_name: v.fullName }, emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+          options: {
+            data: {
+              full_name: v.fullName,
+              gender: v.gender,
+              country: v.country,
+              province: v.province,
+              city: v.city,
+              organization: v.organization ?? "",
+              occupation: v.occupation ?? "",
+              interests: v.interests,
+              phone: v.phone ?? "",
+            },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          },
         });
         if (err) return setError(err.message);
         if (data.session) router.push("/dashboard");
@@ -123,17 +156,80 @@ export function SignUpForm() {
       })}
     >
       {error ? <Notice tone="error">{error}</Notice> : null}
-      <Field label="Full name" htmlFor="su-name" error={formState.errors.fullName?.message}>
+      <Field label="Full name" htmlFor="su-name" error={formState.errors.fullName?.message} required>
         <Input id="su-name" autoComplete="name" {...register("fullName")} />
       </Field>
-      <Field label="Email" htmlFor="su-email" error={formState.errors.email?.message}>
+      <Field label="Email" htmlFor="su-email" error={formState.errors.email?.message} required>
         <Input id="su-email" type="email" autoComplete="email" {...register("email")} />
       </Field>
+      <Field label="Gender" htmlFor="su-gender" error={formState.errors.gender?.message} required>
+        <Select id="su-gender" defaultValue="" {...register("gender")} aria-invalid={Boolean(formState.errors.gender)}>
+          <option value="" disabled>
+            Choose…
+          </option>
+          {GENDERS.map((g) => (
+            <option key={g.value} value={g.value}>
+              {g.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <LocationPicker
+        idPrefix="su"
+        required
+        value={{ country: country ?? "", province: province ?? "", city: city ?? "" }}
+        errors={{ country: formState.errors.country?.message, province: formState.errors.province?.message, city: formState.errors.city?.message }}
+        onChange={(next) => {
+          const opts = { shouldValidate: formState.isSubmitted, shouldDirty: true };
+          setValue("country", next.country, opts);
+          setValue("province", next.province, opts);
+          setValue("city", next.city, opts);
+        }}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Organization or school (optional)" htmlFor="su-org" error={formState.errors.organization?.message}>
+          <Input id="su-org" autoComplete="organization" {...register("organization")} />
+        </Field>
+        <Field label="Occupation (optional)" htmlFor="su-occupation">
+          <Select id="su-occupation" defaultValue="" {...register("occupation")}>
+            <option value="">Choose…</option>
+            {OCCUPATIONS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <fieldset>
+        <legend className="mb-1.5 text-sm font-medium text-navy-900">
+          What would you like to learn?<span className="text-red-600" aria-hidden> *</span>
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          {INTERESTS.map((t) => (
+            <label
+              key={t}
+              className="flex cursor-pointer items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm has-[:checked]:border-teal-500 has-[:checked]:bg-teal-50 has-[:checked]:text-teal-800"
+            >
+              <input type="checkbox" value={t} className="size-4 accent-teal-600" {...register("interests")} />
+              {t}
+            </label>
+          ))}
+        </div>
+        {formState.errors.interests ? (
+          <p role="alert" className="mt-1 text-xs font-medium text-red-600">
+            {formState.errors.interests.message ?? "Choose at least one"}
+          </p>
+        ) : null}
+      </fieldset>
+      <Field label="Phone / WhatsApp (optional)" htmlFor="su-phone" error={formState.errors.phone?.message}>
+        <Input id="su-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="078…" {...register("phone")} />
+      </Field>
       <Field label="Password" htmlFor="su-password" error={formState.errors.password?.message} hint="At least 10 characters.">
-        <Input id="su-password" type="password" autoComplete="new-password" {...register("password")} />
+        <PasswordInput id="su-password" autoComplete="new-password" {...register("password")} />
       </Field>
       <Field label="Confirm password" htmlFor="su-confirm" error={formState.errors.confirm?.message}>
-        <Input id="su-confirm" type="password" autoComplete="new-password" {...register("confirm")} />
+        <PasswordInput id="su-confirm" autoComplete="new-password" {...register("confirm")} />
       </Field>
       <div>
         <label className="flex items-start gap-3 text-sm">
@@ -222,10 +318,10 @@ export function ResetPasswordForm() {
     >
       {error ? <Notice tone="error">{error}</Notice> : null}
       <Field label="New password" htmlFor="rp-password" hint="At least 10 characters.">
-        <Input id="rp-password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <PasswordInput id="rp-password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
       </Field>
       <Field label="Confirm new password" htmlFor="rp-confirm">
-        <Input id="rp-confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+        <PasswordInput id="rp-confirm" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
       </Field>
       <Button type="submit" variant="teal" disabled={busy}>
         Update password

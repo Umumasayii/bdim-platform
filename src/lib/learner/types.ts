@@ -1,3 +1,5 @@
+import type { ProfileDetails } from "@/lib/profile-options";
+
 export type EnrollmentStatus = "requested" | "active" | "completed" | "cancelled";
 
 export interface LearnerProfile {
@@ -6,6 +8,8 @@ export interface LearnerProfile {
   bio: string;
   /** Public URL of the profile picture (Supabase Storage), or a data URL in demo mode. */
   avatarUrl?: string;
+  /** Collected at sign-up (optional for older accounts). */
+  details?: ProfileDetails;
   preferences: { weeklyGoalMinutes?: number; emailUpdates?: boolean; preferredLanguage?: string; /** Activity + reminder emails; on unless set to false. */ emailNotifications?: boolean };
 }
 

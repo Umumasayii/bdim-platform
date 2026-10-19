@@ -28,7 +28,7 @@ export function FormulaLab({ exercises }: { exercises: FormulaExercise[] }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
       <ol className="grid content-start gap-2" aria-label="Excel challenges">
         {exercises.map((e, i) => (
           <li key={e.id}>

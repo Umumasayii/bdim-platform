@@ -28,7 +28,7 @@ export function CareerSelector({
   const questionBySlug = new Map(questions.map((q) => [q.slug, q]));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <div role="radiogroup" aria-label="Choose your goal" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
         {goals.map((g) => (
           <button

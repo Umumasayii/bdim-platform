@@ -31,7 +31,7 @@ async function ProjectPage({ params }: { params: PageProps<"/projects/[slug]">["
           ← All projects
         </Link>
       </PageHeader>
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1.3fr_1fr]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[1.3fr_minmax(0,1fr)]">
         <div className="grid content-start gap-8">
           {p.isExample ? (
             <Notice tone="warning" title="Example project">

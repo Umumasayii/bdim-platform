@@ -51,7 +51,7 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
     db.from("question_completions").select("question_id,completed_at").eq("user_id", user.id),
     db.from("portfolio_items").select("*").eq("user_id", user.id),
     db.from("certificates").select("*").eq("user_id", user.id),
-    db.from("profiles").select("full_name,headline,bio,avatar_url,preferences").eq("id", user.id).maybeSingle(),
+    db.from("profiles").select("full_name,headline,bio,avatar_url,preferences,gender,country,province,city,organization,occupation,interests,phone").eq("id", user.id).maybeSingle(),
     db.from("staff_roles").select("role").eq("user_id", user.id).maybeSingle(),
   ]);
   enr.data?.forEach((r) => (s.enrollments[r.course_id] = { status: r.status, createdAt: r.created_at }));
@@ -107,6 +107,16 @@ async function loadMember(db: SupabaseClient, user: User): Promise<LearnerState>
       bio: profile.data.bio ?? "",
       avatarUrl: profile.data.avatar_url || undefined,
       preferences: profile.data.preferences ?? {},
+      details: {
+        gender: profile.data.gender ?? "",
+        country: profile.data.country ?? "",
+        province: profile.data.province ?? "",
+        city: profile.data.city ?? "",
+        organization: profile.data.organization ?? "",
+        occupation: profile.data.occupation ?? "",
+        interests: profile.data.interests ?? [],
+        phone: profile.data.phone ?? "",
+      },
     };
   }
   return s;
@@ -476,7 +486,25 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
           !(await run(
             db
               .from("profiles")
-              .update({ full_name: profile.fullName, headline: profile.headline, bio: profile.bio, preferences: profile.preferences, updated_at: nowIso() })
+              .update({
+                full_name: profile.fullName,
+                headline: profile.headline,
+                bio: profile.bio,
+                preferences: profile.preferences,
+                ...(profile.details
+                  ? {
+                      gender: profile.details.gender,
+                      country: profile.details.country.trim().slice(0, 80),
+                      province: profile.details.province.trim().slice(0, 80),
+                      city: profile.details.city.trim().slice(0, 80),
+                      organization: profile.details.organization.trim().slice(0, 160),
+                      occupation: profile.details.occupation.trim().slice(0, 80),
+                      interests: profile.details.interests.slice(0, 12),
+                      phone: profile.details.phone.trim().slice(0, 30),
+                    }
+                  : {}),
+                updated_at: nowIso(),
+              })
               .eq("id", user.id),
           ))
         )

@@ -195,7 +195,7 @@ export function LibraryBrowser({ items, courses, payment }: { items: LibraryItem
   return (
     <div>
       {viewer ? <BookViewer file={viewer} onClose={() => setViewer(null)} onBuy={orders[viewer.itemId] === "pending" ? undefined : buyFromViewer} /> : null}
-      <div className="grid gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-[1fr_12rem]">
+      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-line bg-white p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <label htmlFor="lib-search" className="sr-only">

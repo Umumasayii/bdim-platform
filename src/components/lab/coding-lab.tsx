@@ -134,7 +134,7 @@ export function CodingLab({ exercises, datasets }: { exercises: LabExercise[]; d
   const allPass = checkResult?.every((x) => x.pass);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[20rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[20rem_minmax(0,1fr)]">
       {/* Left: exercises and data */}
       <aside className="grid content-start gap-5">
         <div role="tablist" aria-label="Language" className="grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">

@@ -37,7 +37,7 @@ function BookingRow({ b, serviceTitle, offset }: { b: Booking; serviceTitle: str
         <Badge tone={statusTone[b.status]}>{b.status}</Badge>
       </div>
       {b.notes ? <p className="mt-3 whitespace-pre-wrap rounded-xl bg-surface p-3 text-sm">{b.notes}</p> : null}
-      <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto] md:items-end">
+      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
         <Field label="Note to include in the status email" htmlFor={`bn-${b.id}`}>
           <Input id={`bn-${b.id}`} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. meeting link or venue" />
         </Field>
@@ -109,7 +109,7 @@ export function ScheduleEditor({ settings }: { settings: BookingSettings }) {
         {DAYS.map((day, i) => {
           const windows = s.weekly[String(i)] ?? [];
           return (
-            <div key={day} className="grid gap-2 sm:grid-cols-[7rem_1fr] sm:items-center">
+            <div key={day} className="grid grid-cols-1 gap-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center">
               <p className="text-sm font-medium">{day}</p>
               <div className="flex flex-wrap items-center gap-2">
                 {windows.map((w, wi) => (
@@ -192,7 +192,7 @@ export function ServicesEditor({ services, instructors }: { services: BookableSe
     <div className="grid gap-3">
       {message}
       {items.map((s, i) => (
-        <div key={s.id || i} className="grid gap-3 rounded-2xl border border-line bg-white p-4 md:grid-cols-[1.4fr_6rem_10rem_1fr_auto] md:items-end">
+        <div key={s.id || i} className="grid grid-cols-1 gap-3 rounded-2xl border border-line bg-white p-4 md:grid-cols-[1.4fr_6rem_10rem_minmax(0,1fr)_auto] md:items-end">
           <Field label="Service" htmlFor={`sv-${i}-t`}>
             <Input id={`sv-${i}-t`} value={s.title} onChange={(e) => update(i, { title: e.target.value })} />
           </Field>
@@ -271,7 +271,7 @@ function InquiryRow({ inq }: { inq: Inquiry }) {
         <Badge tone={inquiryTone[inq.status]}>{inq.status.replace("_", " ")}</Badge>
       </div>
       <p className="mt-3 whitespace-pre-wrap rounded-xl bg-surface p-3 text-sm">{inq.description}</p>
-      <div className="mt-3 grid gap-2 md:grid-cols-[12rem_1fr_auto] md:items-end">
+      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-[12rem_minmax(0,1fr)_auto] md:items-end">
         <Field label="Status" htmlFor={`is-${inq.id}`}>
           <Select id={`is-${inq.id}`} value={status} onChange={(e) => setStatus(e.target.value as InquiryStatus)}>
             <option value="new">New</option>

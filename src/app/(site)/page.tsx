@@ -45,7 +45,7 @@ export default async function HomePage() {
       {/* A. Hero */}
       <section className="relative overflow-hidden border-b border-line bg-surface">
         <div className="bg-grid absolute inset-0 opacity-70" aria-hidden />
-        <Container className="relative grid items-center gap-12 py-16 lg:grid-cols-[1.05fr_1fr] lg:py-24">
+        <Container className="relative grid grid-cols-1 items-center gap-12 py-16 lg:grid-cols-[1.05fr_minmax(0,1fr)] lg:py-24">
           <div>
             <Eyebrow>{site.slogan}</Eyebrow>
             <h1 className="mt-4 text-4xl font-extrabold leading-[1.08] text-navy-950 sm:text-5xl lg:text-6xl">
@@ -196,7 +196,7 @@ export default async function HomePage() {
                 title: "Learn by doing, with feedback straight away",
                 description: "Answer a sample question, then try a real coding exercise. Explanations show the reasoning, not just the answer.",
                 content: (
-                    <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_minmax(0,1fr)]">
                       <div className="text-ink">
                         <QuestionPractice question={previewQuestion} compact />
                       </div>
@@ -307,7 +307,7 @@ export default async function HomePage() {
             title="Training and analytics support for your team"
             description="Universities, NGOs, government institutions, research teams and companies can request customised training or practical analytics support — from survey design to dashboards and predictive models."
           >
-          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr]">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_1.2fr]">
           <div>
             <ol className="grid gap-4">
               {[
@@ -373,7 +373,7 @@ export default async function HomePage() {
 
       {/* FAQ */}
       <section className="py-20" aria-labelledby="faq-heading">
-        <Container className="grid gap-10 lg:grid-cols-[1fr_1.6fr]">
+        <Container className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_1.6fr]">
           <div>
             <Eyebrow>FAQ</Eyebrow>
             <h2 id="faq-heading" className="mt-2 text-3xl font-bold text-navy-950 sm:text-4xl">
@@ -395,7 +395,7 @@ export default async function HomePage() {
       <section className="pb-20">
         <Container>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-teal-600 to-leaf-600 px-6 py-14 text-white sm:px-12">
-            <div className="relative grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+            <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_minmax(0,1fr)] lg:items-center">
               <div>
                 <h2 className="text-3xl font-bold sm:text-4xl">{site.tagline}</h2>
                 <p className="mt-3 max-w-xl text-lg text-teal-50">Start with free practice today, or talk to us about training for yourself or your organization.</p>

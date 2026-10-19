@@ -72,7 +72,7 @@ export function SubmissionGrader({ s }: { s: GradableSubmission }) {
         ) : null}
         {fileError ? <span className="text-red-600">{fileError}</span> : null}
       </div>
-      <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-[7rem_7rem_1fr] sm:items-start">
+      <div className="mt-4 grid grid-cols-1 gap-3 border-t border-line pt-4 sm:grid-cols-[7rem_7rem_minmax(0,1fr)] sm:items-start">
         <div>
           <label htmlFor={`score-${s.id}`} className="mb-1 block text-xs font-medium">
             Score

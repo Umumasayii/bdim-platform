@@ -27,7 +27,7 @@ async function LessonPage({ params }: { params: PageProps<"/learn/[slug]/[lesson
   const lesson = course?.modules.flatMap((m) => m.lessons).find((l) => l.id === lessonId);
   if (!course || !lesson) notFound();
   return (
-    <Container className="grid gap-8 py-8 lg:grid-cols-[18rem_1fr]">
+    <Container className="grid grid-cols-1 gap-8 py-8 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-24 lg:self-start">
         <Link href={`/courses/${course.slug}`} className="text-sm font-medium text-teal-700 hover:underline">
           ← {course.title}

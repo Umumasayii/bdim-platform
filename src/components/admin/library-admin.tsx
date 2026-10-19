@@ -52,7 +52,7 @@ function ItemForm({ initial, courses, onDone }: { initial: LibraryItem; courses:
   return (
     <div className="grid gap-4">
       {message}
-      <div className="grid gap-4 md:grid-cols-[1fr_10rem]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_10rem]">
         <Field label="Title" htmlFor={`${fid}-t`} required>
           <Input id={`${fid}-t`} value={item.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Introduction to Regression — lecture notes" />
         </Field>
@@ -83,7 +83,7 @@ function ItemForm({ initial, courses, onDone }: { initial: LibraryItem; courses:
             </Button>
           </div>
         ) : (
-          <div className="mt-2 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-start">
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
             <UploadButton
               bucket="library"
               folder="items"
@@ -101,7 +101,7 @@ function ItemForm({ initial, courses, onDone }: { initial: LibraryItem; courses:
         )}
       </div>
 
-      <div className="grid gap-4 rounded-xl bg-surface p-4 md:grid-cols-[12rem_1fr] md:items-end">
+      <div className="grid grid-cols-1 gap-4 rounded-xl bg-surface p-4 md:grid-cols-[12rem_minmax(0,1fr)] md:items-end">
         <Field label="Price (0 = free)" htmlFor={`${fid}-pr`}>
           <div className="flex items-center gap-2">
             <Input id={`${fid}-pr`} type="number" min={0} step={100} value={item.price} onChange={(e) => set("price", Math.max(0, Number(e.target.value)))} />

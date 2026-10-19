@@ -6,6 +6,8 @@ import { emailConfigured } from "@/lib/email";
 import { getStore } from "@/lib/data/store";
 import { currentTimeMs } from "@/lib/utils";
 import { createUserClient } from "@/lib/supabase/server";
+import { listUsers, userStats, type UserStats } from "@/lib/data/users";
+import { StatTiles } from "@/components/admin/people-stats";
 import { Notice } from "@/components/ui/notice";
 
 export const metadata = { title: "Overview" };
@@ -28,30 +30,58 @@ async function supabaseCounts() {
   return { enrollments, requested, attempts, submissions };
 }
 
+function PeopleSummary({ stats }: { stats: UserStats }) {
+  return (
+    <section className="grid gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-xl font-bold text-navy-950">People</h2>
+        <Link href="/admin/people" className="text-sm font-semibold text-teal-700 hover:underline">
+          Open the People dashboard →
+        </Link>
+      </div>
+      <StatTiles
+        tiles={[
+          { label: "Total members", value: stats.total, sub: `${stats.roles.admin} admin · ${stats.roles.instructor} instructor · ${stats.roles.learner} learner` },
+          { label: "New this week", value: stats.newLast7Days, sub: `${stats.newLast30Days} in the last 30 days` },
+          { label: "Active this week", value: stats.activeLast7Days, sub: "Visited in the last 7 days" },
+          { label: "Countries", value: stats.countries.filter((c) => c.label !== "Not given").length, sub: stats.countries[0] && stats.countries[0].label !== "Not given" ? `Most from ${stats.countries[0].label}` : undefined },
+        ]}
+      />
+    </section>
+  );
+}
+
 export default async function AdminOverview() {
   await connection();
   // Each page authorises itself: layouts do not block sibling page rendering.
-  await requireStaffPage();
+  const viewer = await requireStaffPage();
+  const isAdmin = viewer.role === "admin";
   const store = getStore();
-  const [courses, questions, bookings, inquiries, settings, counts] = await Promise.all([
+  const [courses, questions, bookings, inquiries, settings, counts, users] = await Promise.all([
     store.listCourses({ includeUnpublished: true }),
     store.listQuestions({ includeUnpublished: true }),
-    store.listBookings().catch(() => []),
-    store.listInquiries().catch(() => []),
+    isAdmin ? store.listBookings().catch(() => []) : Promise.resolve([]),
+    isAdmin ? store.listInquiries().catch(() => []) : Promise.resolve([]),
     store.getBookingSettings(),
     supabaseCounts(),
+    isAdmin && isSupabaseConfigured ? listUsers().catch(() => null) : Promise.resolve(null),
   ]);
   const nowMs = currentTimeMs();
   const upcoming = bookings.filter((b) => b.status !== "cancelled" && Date.parse(b.startsAt) > nowMs);
   const cards = [
     { label: "Published courses", value: courses.filter((c) => c.published).length, sub: `${courses.length} total`, href: "/admin/courses" },
     { label: "Published questions", value: questions.filter((q) => q.published).length, sub: `${questions.length} total`, href: "/admin/questions" },
-    { label: "Pending bookings", value: bookings.filter((b) => b.status === "pending").length, sub: `${upcoming.length} upcoming`, href: "/admin/bookings" },
-    { label: "New inquiries", value: inquiries.filter((i) => i.status === "new").length, sub: `${inquiries.length} total`, href: "/admin/inquiries" },
+    // Bookings and inquiries are admin-only.
+    ...(isAdmin
+      ? [
+          { label: "Pending bookings", value: bookings.filter((b) => b.status === "pending").length, sub: `${upcoming.length} upcoming`, href: "/admin/bookings" },
+          { label: "New inquiries", value: inquiries.filter((i) => i.status === "new").length, sub: `${inquiries.length} total`, href: "/admin/inquiries" },
+        ]
+      : []),
   ];
   return (
     <div className="grid gap-8">
-      <h1 className="text-3xl font-bold text-navy-950">Overview</h1>
+      <h1 className="text-3xl font-bold text-navy-950">{isAdmin ? "Overview" : "Instructor overview"}</h1>
       <div className="grid gap-3">
         {!isSupabaseConfigured ? (
           <Notice tone="warning" title="Local data store">
@@ -59,12 +89,12 @@ export default async function AdminOverview() {
             learner progress stays in each learner&apos;s browser. Configure Supabase for production.
           </Notice>
         ) : null}
-        {!settings.reviewed ? (
+        {isAdmin && !settings.reviewed ? (
           <Notice tone="warning" title="Booking schedule not reviewed">
             The weekly availability is still the default. <Link href="/admin/bookings" className="font-semibold underline">Review and save it</Link> before launch.
           </Notice>
         ) : null}
-        {!emailConfigured() ? <Notice tone="info">Email notifications are off. Set SMTP_HOST, SMTP_USER and SMTP_PASS (e.g. Gmail with an App Password) or RESEND_API_KEY to enable them.</Notice> : null}
+        {isAdmin && !emailConfigured() ? <Notice tone="info">Email notifications are off. Set SMTP_HOST, SMTP_USER and SMTP_PASS (e.g. Gmail with an App Password) or RESEND_API_KEY to enable them.</Notice> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((c) => (
@@ -75,6 +105,7 @@ export default async function AdminOverview() {
           </Link>
         ))}
       </div>
+      {users ? <PeopleSummary stats={userStats(users, nowMs)} /> : null}
       <section className="rounded-2xl border border-line bg-white p-5">
         <h2 className="font-bold text-navy-950">Engagement</h2>
         {counts ? (

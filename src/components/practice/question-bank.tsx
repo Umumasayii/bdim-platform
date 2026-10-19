@@ -41,7 +41,7 @@ export function QuestionBank({ questions, initialTopic = "" }: { questions: Ques
 
   return (
     <div>
-      <div className="grid gap-3 rounded-2xl border border-line bg-white p-4 lg:grid-cols-[1fr_repeat(4,minmax(0,10rem))]">
+      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-line bg-white p-4 lg:grid-cols-[minmax(0,1fr)_repeat(4,minmax(0,10rem))]">
         <div className="relative">
           <label htmlFor="q-search" className="sr-only">
             Search questions

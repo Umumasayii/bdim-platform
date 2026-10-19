@@ -17,7 +17,7 @@ export default function ContactPage() {
   return (
     <>
       <PageHeader eyebrow="Contact" title="Let's talk about your goals" description="Questions about courses, organizational training or a data project? Send us a message." />
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_1.5fr]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_1.5fr]">
         <aside className="grid content-start gap-4">
           <div className="flex gap-3 rounded-2xl border border-line bg-white p-5">
             <MapPin className="mt-0.5 size-5 text-teal-600" aria-hidden />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Award, BookOpen, Bookmark, ClipboardCheck, Flame, FolderKanban, NotebookPen, Target, Trash2, UserRound } from "lucide-react";
+import { Award, BookOpen, Bookmark, ClipboardCheck, Flame, FolderKanban, NotebookPen, ShieldCheck, Target, Trash2, UserRound } from "lucide-react";
 import type { Course, Question } from "@/lib/types";
 import { useLearner } from "@/lib/learner/provider";
 import { computeStreak } from "@/lib/learner/types";
@@ -10,6 +10,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/layout/avatar";
 import { ProgressBar } from "@/components/ui/card";
 import { Field, Input, Textarea, Select } from "@/components/ui/field";
+import { emptyDetails } from "@/lib/profile-options";
+import { ProfileDetailsEditor } from "./profile-details-editor";
 import { EmptyState } from "@/components/ui/layout";
 import { Notice } from "@/components/ui/notice";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +68,7 @@ export function LearnerDashboard({ courses, questions }: { courses: Course[]; qu
   const lastLesson = lastCourse?.modules.flatMap((m) => m.lessons).find((l) => l.id === last?.lessonId);
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[14rem_1fr]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
       <nav aria-label="Dashboard sections" className="lg:sticky lg:top-24 lg:self-start">
         <ul className="flex gap-1 overflow-x-auto lg:flex-col">
           {tabs.map((t) => (
@@ -92,6 +94,25 @@ export function LearnerDashboard({ courses, questions }: { courses: Course[]; qu
           <Notice tone="warning" className="mb-6" title="Demo mode">
             Accounts are not configured, so this dashboard shows data stored in this browser only. Certificates issued here are demonstrations.
           </Notice>
+        ) : null}
+
+        {state.role ? (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal-200 bg-teal-50 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-teal-700" aria-hidden />
+              <div>
+                <p className="font-semibold text-navy-950">You are {state.role === "admin" ? "an Admin" : "an Instructor"}</p>
+                <p className="text-sm text-muted">
+                  {state.role === "admin"
+                    ? "Manage users, courses, the library, payments, bookings and settings."
+                    : "Edit courses, questions and the library, approve enrollments and mark assignments."}
+                </p>
+              </div>
+            </div>
+            <ButtonLink href="/admin" variant="teal" size="sm">
+              Open {state.role === "admin" ? "admin panel" : "instructor panel"}
+            </ButtonLink>
+          </div>
         ) : null}
 
         {tab === "overview" ? (
@@ -572,6 +593,9 @@ function ProfileForm() {
       <Field label="About me" htmlFor="pr-bio">
         <Textarea id="pr-bio" rows={4} value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })} />
       </Field>
+      {mode === "member" ? (
+        <ProfileDetailsEditor value={profile.details ?? emptyDetails()} onChange={(details) => setProfile({ ...profile, details })} />
+      ) : null}
       <Field label="Weekly study goal (minutes)" htmlFor="pr-goal">
         <Input
           id="pr-goal"

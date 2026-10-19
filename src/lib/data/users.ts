@@ -19,6 +19,16 @@ export interface UserRow {
   courses: number;
   lessonsDone: number;
   toGrade: number;
+  /** Last time they used the website (more accurate than last sign-in). */
+  lastSeenAt: string;
+  gender: string;
+  country: string;
+  province: string;
+  city: string;
+  organization: string;
+  occupation: string;
+  interests: string[];
+  phone: string;
 }
 
 async function allAuthUsers() {
@@ -37,7 +47,7 @@ export async function listUsers(): Promise<UserRow[]> {
   const db = createServiceClient();
   const [users, profiles, roles, enrollments, progress, submissions] = await Promise.all([
     allAuthUsers(),
-    db.from("profiles").select("id, full_name, avatar_url"),
+    db.from("profiles").select("id, full_name, avatar_url, last_seen_at, gender, country, province, city, organization, occupation, interests, phone"),
     db.from("staff_roles").select("user_id, role"),
     db.from("enrollments").select("user_id, status"),
     db.from("lesson_progress").select("user_id"),
@@ -54,6 +64,7 @@ export async function listUsers(): Promise<UserRow[]> {
   const lessons = count(progress.data as { user_id: string }[] | null);
   const toGrade = count(submissions.data as { user_id: string; graded_at: string | null }[] | null, (r) => !r.graded_at);
 
+  const text = (id: string, key: string) => ((prof.get(id) as Record<string, unknown> | undefined)?.[key] as string | null) ?? "";
   return users
     .map((u) => ({
       id: u.id,
@@ -67,6 +78,15 @@ export async function listUsers(): Promise<UserRow[]> {
       courses: courses.get(u.id) ?? 0,
       lessonsDone: lessons.get(u.id) ?? 0,
       toGrade: toGrade.get(u.id) ?? 0,
+      lastSeenAt: text(u.id, "last_seen_at"),
+      gender: text(u.id, "gender"),
+      country: text(u.id, "country"),
+      province: text(u.id, "province"),
+      city: text(u.id, "city"),
+      organization: text(u.id, "organization"),
+      occupation: text(u.id, "occupation"),
+      interests: ((prof.get(u.id) as { interests?: string[] } | undefined)?.interests ?? []) as string[],
+      phone: text(u.id, "phone"),
     }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
@@ -92,7 +112,20 @@ export async function getUserDetail(userId: string) {
     createdAt: auth.user.created_at,
     lastSignInAt: auth.user.last_sign_in_at ?? "",
     confirmed: Boolean(auth.user.email_confirmed_at),
-    profile: profile.data as { full_name: string; headline: string; bio: string; avatar_url: string } | null,
+    profile: profile.data as {
+      full_name: string;
+      headline: string;
+      bio: string;
+      avatar_url: string;
+      gender: string;
+      country: string;
+      province: string;
+      city: string;
+      organization: string;
+      occupation: string;
+      interests: string[];
+      phone: string;
+    } | null,
     role: ((role.data?.role as string) ?? "learner") as UserRow["role"],
     enrollments: (enrollments.data ?? []) as { id: string; course_id: string; status: string; created_at: string }[],
     progress: (progress.data ?? []) as { lesson_id: string; course_id: string; completed_at: string }[],
@@ -126,3 +159,80 @@ export async function getUserDetail(userId: string) {
 }
 
 export type UserDetail = NonNullable<Awaited<ReturnType<typeof getUserDetail>>>;
+
+export type Tally = { label: string; count: number }[];
+
+export interface UserStats {
+  total: number;
+  confirmed: number;
+  newLast7Days: number;
+  newLast30Days: number;
+  activeLast7Days: number;
+  activeLast30Days: number;
+  /** Gave gender, location and at least one interest. */
+  completeProfiles: number;
+  roles: { admin: number; instructor: number; learner: number };
+  gender: Tally;
+  countries: Tally;
+  /** "Province, Country". */
+  provinces: Tally;
+  /** "District, Province, Country". */
+  districts: Tally;
+  occupations: Tally;
+  organizations: Tally;
+  interests: Tally;
+  /** Sign-ups per week, oldest first: label is the week's Monday (YYYY-MM-DD). */
+  signupsByWeek: Tally;
+}
+
+const NOT_GIVEN = "Not given";
+
+function tally(values: string[]): Tally {
+  const m = new Map<string, number>();
+  values.forEach((v) => m.set(v, (m.get(v) ?? 0) + 1));
+  return [...m.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => (a.label === NOT_GIVEN ? 1 : 0) - (b.label === NOT_GIVEN ? 1 : 0) || b.count - a.count || a.label.localeCompare(b.label));
+}
+
+/** Monday (UTC) of the week containing `ms`, as YYYY-MM-DD. */
+function weekStart(ms: number) {
+  const d = new Date(ms);
+  const day = (d.getUTCDay() + 6) % 7; // Monday = 0
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day)).toISOString().slice(0, 10);
+}
+
+/** Counts for the admin dashboards. `nowMs` is passed in so the page decides the time. */
+export function userStats(rows: UserRow[], nowMs: number, weeks = 12): UserStats {
+  const since = (days: number) => nowMs - days * 86_400_000;
+  const genderName: Record<string, string> = { female: "Female", male: "Male", prefer_not_to_say: "Prefer not to say" };
+  const join = (...parts: string[]) => parts.filter(Boolean).join(", ");
+  const weekLabels = Array.from({ length: weeks }, (_, i) => weekStart(nowMs - (weeks - 1 - i) * 7 * 86_400_000));
+  const signups = new Map(weekLabels.map((w) => [w, 0]));
+  rows.forEach((r) => {
+    const w = weekStart(Date.parse(r.createdAt));
+    if (signups.has(w)) signups.set(w, (signups.get(w) ?? 0) + 1);
+  });
+  return {
+    total: rows.length,
+    confirmed: rows.filter((r) => r.confirmed).length,
+    newLast7Days: rows.filter((r) => Date.parse(r.createdAt) >= since(7)).length,
+    newLast30Days: rows.filter((r) => Date.parse(r.createdAt) >= since(30)).length,
+    activeLast7Days: rows.filter((r) => r.lastSeenAt && Date.parse(r.lastSeenAt) >= since(7)).length,
+    activeLast30Days: rows.filter((r) => r.lastSeenAt && Date.parse(r.lastSeenAt) >= since(30)).length,
+    completeProfiles: rows.filter((r) => r.gender && r.country && r.interests.length).length,
+    roles: {
+      admin: rows.filter((r) => r.role === "admin").length,
+      instructor: rows.filter((r) => r.role === "instructor").length,
+      learner: rows.filter((r) => r.role === "learner").length,
+    },
+    gender: tally(rows.map((r) => genderName[r.gender] ?? NOT_GIVEN)),
+    countries: tally(rows.map((r) => r.country || NOT_GIVEN)),
+    provinces: tally(rows.filter((r) => r.province).map((r) => join(r.province, r.country))),
+    districts: tally(rows.filter((r) => r.city).map((r) => join(r.city, r.province, r.country))),
+    occupations: tally(rows.map((r) => r.occupation || NOT_GIVEN)),
+    organizations: tally(rows.filter((r) => r.organization.trim()).map((r) => r.organization.trim())),
+    interests: tally(rows.flatMap((r) => r.interests)),
+    signupsByWeek: weekLabels.map((label) => ({ label, count: signups.get(label) ?? 0 })),
+  };
+}

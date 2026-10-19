@@ -30,7 +30,7 @@ async function ServicePage({ params }: { params: PageProps<"/consulting/[slug]">
           ← All services
         </Link>
       </PageHeader>
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_1.2fr]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_1.2fr]">
         <div className="grid content-start gap-8">
           <section>
             <h2 className="text-lg font-bold text-navy-950">What you receive</h2>

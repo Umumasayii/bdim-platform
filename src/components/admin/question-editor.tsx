@@ -119,7 +119,7 @@ export function QuestionEditor({
         </Field>
 
         {q.type === "multiple-choice" ? (
-          <div className="grid gap-4 md:grid-cols-[1fr_10rem]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_10rem]">
             <Field label="Options (one per line)" htmlFor="q-opts">
               <Textarea id="q-opts" rows={5} value={lines(q.options ?? [])} onChange={(e) => set("options", e.target.value.split("\n"))} />
             </Field>

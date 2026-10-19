@@ -13,6 +13,25 @@ import { formatDate } from "@/lib/utils";
 import { useAdminAction } from "./admin-ui";
 import { MemberActions } from "./member-actions";
 import { RoleControl } from "./role-control";
+import { formatLocation, genderLabel } from "@/lib/profile-options";
+
+/** Gender · location · occupation · organization · phone · interests (whatever they filled in). */
+function PersonDetails({ user }: { user: UserRow }) {
+  const parts = [
+    user.gender ? genderLabel(user.gender) : "",
+    formatLocation(user),
+    user.occupation,
+    user.organization,
+    user.phone,
+  ].filter(Boolean);
+  if (!parts.length && !user.interests.length) return <p className="mt-0.5 text-xs italic text-muted">No profile details yet</p>;
+  return (
+    <p className="mt-0.5 text-xs text-navy-800">
+      {parts.join(" · ")}
+      {user.interests.length ? <span className="text-muted">{parts.length ? " · " : ""}Interested in {user.interests.join(", ")}</span> : null}
+    </p>
+  );
+}
 
 export function UsersTable({ users, courses, currentUserId }: { users: UserRow[]; courses: { id: string; title: string }[]; currentUserId: string }) {
   const [q, setQ] = useState("");
@@ -22,19 +41,19 @@ export function UsersTable({ users, courses, currentUserId }: { users: UserRow[]
       users.filter(
         (u) =>
           (!role || u.role === role) &&
-          (!q.trim() || `${u.fullName} ${u.email}`.toLowerCase().includes(q.trim().toLowerCase())),
+          (!q.trim() || [u.fullName, u.email, u.city, u.country, u.organization, u.occupation, u.phone].join(" ").toLowerCase().includes(q.trim().toLowerCase())),
       ),
     [users, q, role],
   );
   return (
     <div>
-      <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_12rem]">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <label htmlFor="user-search" className="sr-only">
             Search users
           </label>
-          <Input id="user-search" placeholder="Search by name or email" value={q} onChange={(e) => setQ(e.target.value)} className="pl-10" />
+          <Input id="user-search" placeholder="Search by name, email, location, organization…" value={q} onChange={(e) => setQ(e.target.value)} className="pl-10" />
         </div>
         <Select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">All roles</option>
@@ -71,9 +90,10 @@ function UserCard({ user, courses, isSelf }: { user: UserRow; courses: { id: str
           <p className="truncate text-sm text-muted">{user.email}</p>
           <p className="mt-0.5 text-xs text-muted">
             Joined {formatDate(user.createdAt)}
-            {user.lastSignInAt ? ` · last seen ${formatDate(user.lastSignInAt)}` : ""}
+            {user.lastSeenAt || user.lastSignInAt ? ` · last seen ${formatDate(user.lastSeenAt || user.lastSignInAt)}` : ""}
             {!user.confirmed ? " · email not confirmed" : ""}
           </p>
+          <PersonDetails user={user} />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge tone="navy">{user.courses} courses</Badge>

@@ -11,7 +11,7 @@ export function InstructorCard({ profile }: { profile: InstructorProfile }) {
     .slice(0, 2);
   const hasDetails = profile.bio || profile.expertise.length || profile.teachingInterests.length;
   return (
-    <div className="grid gap-8 rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-card)] sm:p-8 md:grid-cols-[14rem_1fr]">
+    <div className="grid grid-cols-1 gap-8 rounded-2xl border border-line bg-white p-6 shadow-[var(--shadow-card)] sm:p-8 md:grid-cols-[14rem_minmax(0,1fr)]">
       <div className="relative aspect-square w-full max-w-56 overflow-hidden rounded-2xl bg-gradient-to-br from-navy-800 to-teal-700">
         {profile.photoUrl ? (
           <Image src={profile.photoUrl} alt={`Portrait of ${profile.name}`} fill sizes="224px" className="object-cover" unoptimized={profile.photoUrl.startsWith("http")} />

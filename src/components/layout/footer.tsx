@@ -41,7 +41,7 @@ const columns = [
 export function Footer() {
   return (
     <footer className="mt-auto bg-navy-950 text-navy-100">
-      <Container className="grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <Container className="grid grid-cols-1 gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <Logo inverted />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-navy-200">{site.tagline}</p>

@@ -46,7 +46,7 @@ export function CourseCatalog({ courses, categories, books = {} }: { courses: Co
   return (
     <div>
       <div className="sticky top-16 z-20 -mx-4 border-b border-line bg-white/95 px-4 py-4 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:px-5">
-        <div className="grid gap-3 md:grid-cols-[1fr_repeat(3,minmax(0,12rem))]">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_repeat(3,minmax(0,12rem))]">
           <div className="relative">
             <label htmlFor="course-search" className="sr-only">
               Search courses

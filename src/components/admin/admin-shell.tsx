@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, CalendarDays, ClipboardCheck, GraduationCap, HelpCircle, Inbox, LayoutDashboard, Library, LogOut, Map, MessageSquareQuote, UserRound, Users } from "lucide-react";
+import { BarChart3, BookOpen, CalendarDays, ClipboardCheck, GraduationCap, HelpCircle, Inbox, LayoutDashboard, Library, LogOut, Map, MessageSquareQuote, UserRound, Users } from "lucide-react";
 import { localAdminLogout } from "@/app/actions/admin";
 import { useLearner } from "@/lib/learner/provider";
 import { LogoMark } from "@/components/layout/logo";
@@ -12,6 +12,7 @@ import type { Role } from "@/lib/types";
 
 const nav: { href: string; label: string; icon: typeof BookOpen; adminOnly?: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/people", label: "People & statistics", icon: BarChart3, adminOnly: true },
   { href: "/admin/users", label: "Users", icon: Users, adminOnly: true },
   { href: "/admin/courses", label: "Courses & lessons", icon: BookOpen },
   { href: "/admin/library", label: "Library (books & notes)", icon: Library },
@@ -29,7 +30,7 @@ export function AdminShell({ viewer, children }: { viewer: { name: string; role:
   const pathname = usePathname();
   const { signOut } = useLearner();
   return (
-    <div className="grid flex-1 lg:grid-cols-[15rem_1fr]">
+    <div className="grid grid-cols-1 flex-1 lg:grid-cols-[15rem_minmax(0,1fr)]">
       <aside className="border-b border-line bg-navy-950 text-navy-100 lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 px-5 py-5">
           <LogoMark className="size-9" onDark />

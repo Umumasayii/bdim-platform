@@ -37,7 +37,7 @@ async function PathPage({ params }: { params: PageProps<"/learning-paths/[slug]"
           <span className="text-sm text-muted">{path.estimatedDuration} · {list.length} courses</span>
         </div>
       </PageHeader>
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_20rem]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div>
           <h2 className="text-2xl font-bold text-navy-950">Courses in this path</h2>
           <p className="mt-1 text-muted">Take them in order, or skip those you already know.</p>

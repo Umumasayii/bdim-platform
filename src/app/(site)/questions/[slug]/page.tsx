@@ -31,7 +31,7 @@ async function QuestionPage({ params }: { params: PageProps<"/questions/[slug]">
   const sameTopic = questions.filter((x) => x.topic === question.topic && x.id !== question.id).slice(0, 4);
 
   return (
-    <Container className="grid gap-8 py-10 lg:grid-cols-[1fr_18rem]">
+    <Container className="grid grid-cols-1 gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="grid gap-6">
         <nav aria-label="Breadcrumb" className="text-sm text-muted">
           <Link href="/questions" className="hover:text-navy-900">

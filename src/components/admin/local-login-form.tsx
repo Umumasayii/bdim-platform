@@ -3,7 +3,8 @@
 import { useActionState } from "react";
 import { localAdminLogin } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
-import { Field, Input } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Notice } from "@/components/ui/notice";
 
 export function LocalAdminLoginForm() {
@@ -12,7 +13,7 @@ export function LocalAdminLoginForm() {
     <form action={action} className="grid gap-4">
       {state && !state.ok ? <Notice tone="error">{state.message}</Notice> : null}
       <Field label="Admin password" htmlFor="admin-password">
-        <Input id="admin-password" name="password" type="password" autoComplete="current-password" required />
+        <PasswordInput id="admin-password" name="password" autoComplete="current-password" required />
       </Field>
       <Button type="submit" variant="teal" disabled={pending}>
         {pending ? "Signing in…" : "Sign in"}

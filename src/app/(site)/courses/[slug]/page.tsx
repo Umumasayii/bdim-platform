@@ -79,7 +79,7 @@ async function CoursePage({ params }: { params: PageProps<"/courses/[slug]">["pa
         </div>
       </section>
 
-      <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_22rem]">
+      <Container className="grid grid-cols-1 gap-10 py-12 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="grid gap-12">
           <section>
             <h2 className="text-2xl font-bold text-navy-950">About this course</h2>
