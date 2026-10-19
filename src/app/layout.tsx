@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { LearnerProvider } from "@/lib/learner/provider";
 import { themeInitScript } from "@/lib/theme";
 import { siteUrl } from "@/lib/config";
@@ -41,6 +44,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="flex min-h-dvh flex-col">
         <LearnerProvider>{children}</LearnerProvider>
+        {/* Vercel Web Analytics + Speed Insights (they read the URL, so they sit in Suspense). */}
+        <Suspense fallback={null}>
+          <Analytics />
+          <SpeedInsights />
+        </Suspense>
       </body>
     </html>
   );

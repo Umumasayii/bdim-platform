@@ -230,7 +230,11 @@ export async function setUserRole(userId: string, role: "learner" | "instructor"
     role === "learner"
       ? await db.from("staff_roles").delete().eq("user_id", userId)
       : await db.from("staff_roles").upsert({ user_id: userId, role });
-  return error ? { ok: false, message: error.message } : { ok: true, message: `Role set to ${role}.` };
+  if (error) return { ok: false, message: error.message };
+  const { data: target } = await db.auth.admin.getUserById(userId);
+  const who = target.user?.email ?? "This person";
+  const label = role === "admin" ? "an Admin" : role === "instructor" ? "an Instructor" : "a Learner";
+  return { ok: true, message: `Done: ${who} is now ${label}.` };
 }
 
 export async function enrollUser(userId: string, courseId: string): Promise<AdminResult> {

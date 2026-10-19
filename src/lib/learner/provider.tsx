@@ -202,6 +202,34 @@ export function LearnerProvider({ children }: { children: ReactNode }) {
     };
   }, [db]);
 
+  // Keep the role current: an admin may promote or demote this person while
+  // they are signed in. Re-check every minute and when the tab regains focus,
+  // then refresh server-rendered pages (the admin area re-checks access itself).
+  const userId = user?.id;
+  useEffect(() => {
+    if (!db || !userId || !ready) return;
+    let stopped = false;
+    const check = async () => {
+      if (document.visibilityState !== "visible") return;
+      const { data, error: err } = await db.from("staff_roles").select("role").eq("user_id", userId).maybeSingle();
+      if (stopped || err) return;
+      const role = data?.role === "admin" || data?.role === "instructor" ? data.role : undefined;
+      if (role !== stateRef.current.role) {
+        setState((s) => ({ ...s, role }));
+        router.refresh();
+      }
+    };
+    const timer = window.setInterval(check, 60_000);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener("focus", check);
+    };
+  }, [db, userId, ready, router]);
+
   // Persist browser-held state
   useEffect(() => {
     if (!ready) return;

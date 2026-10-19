@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import type { UserRow } from "@/lib/data/users";
-import { enrollUser, setUserRole } from "@/app/actions/admin";
+import { enrollUser } from "@/app/actions/admin";
 import { Avatar } from "@/components/layout/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Input, Select } from "@/components/ui/field";
 import { formatDate } from "@/lib/utils";
 import { useAdminAction } from "./admin-ui";
 import { MemberActions } from "./member-actions";
+import { RoleControl } from "./role-control";
 
 export function UsersTable({ users, courses, currentUserId }: { users: UserRow[]; courses: { id: string; title: string }[]; currentUserId: string }) {
   const [q, setQ] = useState("");
@@ -81,24 +82,7 @@ function UserCard({ user, courses, isSelf }: { user: UserRow; courses: { id: str
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-        <label className="text-xs font-medium text-muted" htmlFor={`role-${user.id}`}>
-          Role
-        </label>
-        <Select
-          id={`role-${user.id}`}
-          className="h-9 w-36"
-          value={user.role}
-          disabled={pending || isSelf}
-          onChange={(e) => {
-            const next = e.target.value as UserRow["role"];
-            if (next === "admin" && !window.confirm(`Give ${user.email} full administrator access?`)) return;
-            run(() => setUserRole(user.id, next));
-          }}
-        >
-          <option value="learner">Learner</option>
-          <option value="instructor">Instructor</option>
-          <option value="admin">Admin</option>
-        </Select>
+        <RoleControl user={{ id: user.id, email: user.email, name: user.fullName || user.email, role: user.role }} isSelf={isSelf} />
         <span className="mx-1 hidden h-5 w-px bg-line sm:block" aria-hidden />
         <label className="text-xs font-medium text-muted" htmlFor={`enroll-${user.id}`}>
           Enroll in
