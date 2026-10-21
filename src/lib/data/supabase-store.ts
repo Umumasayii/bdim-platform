@@ -187,6 +187,17 @@ export const supabaseStore: Store = {
     if (moduleIds.length) check(await db.from("course_modules").delete().eq("course_id", course.id).not("id", "in", quote(moduleIds)));
   },
 
+  async updateCourseSettings(id, patch) {
+    const db = await createUserClient();
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (patch.published !== undefined) row.published = patch.published;
+    if (patch.featured !== undefined) row.featured = patch.featured;
+    if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    const { data, error } = await db.from("courses").update(row).eq("id", id).select("id");
+    if (error) throw new Error(error.message);
+    if (!data?.length) throw new Error("Course not found, or you can't change it.");
+  },
+
   async deleteCourse(id) {
     const db = await createUserClient();
     check(await db.from("courses").delete().eq("id", id));

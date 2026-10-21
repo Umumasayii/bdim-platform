@@ -38,7 +38,7 @@ function blankCourse(): Course {
 export default async function EditCoursePage({ params }: PageProps<"/admin/courses/[id]">) {
   await connection();
   // Each page authorises itself: layouts do not block sibling page rendering.
-  await requireStaffPage();
+  const viewer = await requireStaffPage();
   const { id } = await params;
   let course: Course | undefined;
   if (id === "new") course = blankCourse();
@@ -54,5 +54,5 @@ export default async function EditCoursePage({ params }: PageProps<"/admin/cours
     }
   }
   if (!course) notFound();
-  return <CourseEditor initial={course} isNew={id === "new"} exerciseIds={labExercises.map((e) => ({ id: e.id, title: e.title }))} />;
+  return <CourseEditor initial={course} isNew={id === "new"} isAdmin={viewer.role === "admin"} exerciseIds={labExercises.map((e) => ({ id: e.id, title: e.title }))} />;
 }

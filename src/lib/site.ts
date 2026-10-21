@@ -38,6 +38,9 @@ export const site = {
   logo: { full: "/brand/bdim-logo.png", mark: "/brand/bdim-mark.png" },
 };
 
+/** How many "featured" courses the homepage shows (first ones in course order). */
+export const HOMEPAGE_FEATURED_COURSES = 6;
+
 export interface NavItem {
   href: string;
   label: string;

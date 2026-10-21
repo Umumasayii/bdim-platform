@@ -1,59 +1,63 @@
-import Link from "next/link";
 import { connection } from "next/server";
-import { requireStaffPage } from "@/lib/auth/viewer";
 import { Plus } from "lucide-react";
+import { requireStaffPage } from "@/lib/auth/viewer";
+import { isSupabaseConfigured } from "@/lib/config";
 import { categories } from "@/content/categories";
 import { getStore } from "@/lib/data/store";
 import { courseLessonCount } from "@/lib/data/sanitize";
-import { Badge } from "@/components/ui/badge";
+import { createUserClient } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/ui/button";
+import { CoursesBoard, type CourseRow } from "@/components/admin/courses-board";
 
 export const metadata = { title: "Courses" };
+
+/** Enrolled (active/completed) and waiting (requested) learners per course. */
+async function enrollmentCounts() {
+  const counts = new Map<string, { enrolled: number; pending: number }>();
+  if (!isSupabaseConfigured) return counts;
+  const db = await createUserClient();
+  const { data } = await db.from("enrollments").select("course_id, status");
+  for (const e of (data ?? []) as { course_id: string; status: string }[]) {
+    const c = counts.get(e.course_id) ?? { enrolled: 0, pending: 0 };
+    if (e.status === "active" || e.status === "completed") c.enrolled++;
+    else if (e.status === "requested") c.pending++;
+    counts.set(e.course_id, c);
+  }
+  return counts;
+}
 
 export default async function AdminCoursesPage() {
   await connection();
   // Each page authorises itself: layouts do not block sibling page rendering.
-  await requireStaffPage();
-  const courses = await getStore().listCourses({ includeUnpublished: true });
+  const viewer = await requireStaffPage();
+  const [courses, counts] = await Promise.all([getStore().listCourses({ includeUnpublished: true }), enrollmentCounts()]);
+  const rows: CourseRow[] = courses.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    title: c.title,
+    categoryId: c.category,
+    categoryShort: categories.find((x) => x.id === c.category)?.short ?? c.category,
+    level: c.level,
+    lessons: courseLessonCount(c),
+    modules: c.modules.length,
+    enrollmentMode: c.enrollmentMode,
+    published: c.published,
+    featured: c.featured,
+    enrolled: counts.get(c.id)?.enrolled ?? 0,
+    pending: counts.get(c.id)?.pending ?? 0,
+  }));
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold text-navy-950">Courses & lessons</h1>
+    <div className="grid gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold text-navy-950">Courses & lessons</h1>
+          <p className="mt-1 text-muted">Publish or hide courses, choose what appears on the homepage, set the order, and edit or delete.</p>
+        </div>
         <ButtonLink href="/admin/courses/new" variant="teal">
           <Plus className="size-4" aria-hidden /> New course
         </ButtonLink>
       </div>
-      <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-        <table className="w-full min-w-[44rem] text-sm">
-          <thead className="bg-surface text-left text-xs uppercase tracking-wide text-muted">
-            <tr>
-              <th className="px-4 py-3">Course</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Level</th>
-              <th className="px-4 py-3">Lessons</th>
-              <th className="px-4 py-3">Enrollment</th>
-              <th className="px-4 py-3">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {courses.map((c) => (
-              <tr key={c.id}>
-                <td className="px-4 py-3">
-                  <Link href={`/admin/courses/${c.id}`} className="font-semibold text-navy-950 hover:text-teal-700 hover:underline">
-                    {c.title}
-                  </Link>
-                  {c.featured ? <Badge tone="teal" className="ml-2">Featured</Badge> : null}
-                </td>
-                <td className="px-4 py-3 text-muted">{categories.find((x) => x.id === c.category)?.short}</td>
-                <td className="px-4 py-3 text-muted">{c.level}</td>
-                <td className="px-4 py-3 text-muted">{courseLessonCount(c)}</td>
-                <td className="px-4 py-3 text-muted">{c.enrollmentMode === "open" ? "Self-enroll" : "Approval"}</td>
-                <td className="px-4 py-3">{c.published ? <Badge tone="green">Published</Badge> : <Badge>Draft</Badge>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CoursesBoard rows={rows} categories={categories.map((c) => ({ id: c.id, short: c.short }))} isAdmin={viewer.role === "admin"} />
     </div>
   );
 }

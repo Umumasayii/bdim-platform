@@ -7,7 +7,7 @@ import { projects } from "@/content/projects";
 import { consultingServices } from "@/content/services";
 import { labExercises } from "@/content/exercises";
 import { getInstructors, getPublishedCourses, getPublishedPaths, getPublishedQuestions, getPublishedTestimonials } from "@/lib/data/content";
-import { site } from "@/lib/site";
+import { HOMEPAGE_FEATURED_COURSES, site } from "@/lib/site";
 import { getCourseBooks } from "@/lib/data/library";
 import { Container, Eyebrow, SectionHeading } from "@/components/ui/layout";
 import { Collapsible } from "@/components/ui/collapsible";
@@ -33,7 +33,7 @@ export default async function HomePage() {
     getCourseBooks(),
   ]);
   const courseBySlug = new Map(courses.map((c) => [c.slug, c]));
-  const featuredCourses = courses.filter((c) => c.featured).slice(0, 6);
+  const featuredCourses = courses.filter((c) => c.featured).slice(0, HOMEPAGE_FEATURED_COURSES);
   const trackPaths = (["Beginner", "Intermediate", "Advanced"] as const)
     .map((level) => paths.find((p) => p.level === level))
     .filter((p) => p !== undefined);

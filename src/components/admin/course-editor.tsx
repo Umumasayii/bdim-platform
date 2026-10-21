@@ -6,7 +6,8 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import type { Course, CourseModule, DeliveryFormat, Lesson, Quiz } from "@/lib/types";
 import { categories } from "@/content/categories";
-import { deleteCourse, saveCourse } from "@/app/actions/admin";
+import { saveCourse } from "@/app/actions/admin";
+import { CourseDeleteDialog } from "./course-delete-dialog";
 import { slugify } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -125,7 +126,18 @@ function QuizEditor({ quiz, onChange }: { quiz: Quiz; onChange: (q: Quiz | undef
   );
 }
 
-export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course; isNew: boolean; exerciseIds: { id: string; title: string }[] }) {
+export function CourseEditor({
+  initial,
+  isNew,
+  exerciseIds,
+  isAdmin = false,
+}: {
+  initial: Course;
+  isNew: boolean;
+  exerciseIds: { id: string; title: string }[];
+  isAdmin?: boolean;
+}) {
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
   const [c, setC] = useState<Course>(initial);
   const [openModule, setOpenModule] = useState<string | null>(initial.modules[0]?.id ?? null);
@@ -167,16 +179,11 @@ export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course;
               <Link href={`/courses/${c.slug}`} className="inline-flex h-11 items-center px-3 text-sm font-semibold text-teal-700 hover:underline" target="_blank">
                 View
               </Link>
-              <Button
-                variant="ghost"
-                disabled={pending}
-                onClick={() => {
-                  if (window.confirm(`Delete "${c.title}" permanently? Learner progress for this course will also be removed.`))
-                    run(() => deleteCourse(c.id), () => router.replace("/admin/courses"));
-                }}
-              >
-                <Trash2 className="size-4" aria-hidden /> Delete
-              </Button>
+              {isAdmin ? (
+                <Button variant="ghost" disabled={pending} onClick={() => setDeleting(true)}>
+                  <Trash2 className="size-4" aria-hidden /> Delete
+                </Button>
+              ) : null}
             </>
           ) : null}
           <Button variant="teal" onClick={save} disabled={pending}>
@@ -185,6 +192,20 @@ export function CourseEditor({ initial, isNew, exerciseIds }: { initial: Course;
         </div>
       </div>
       {message}
+      {deleting ? (
+        <CourseDeleteDialog
+          course={{ id: initial.id, title: initial.title, published: initial.published }}
+          onClose={() => setDeleting(false)}
+          onDone={(msg, deleted) => {
+            setDeleting(false);
+            if (deleted) router.replace("/admin/courses");
+            else {
+              setC((prev) => ({ ...prev, published: false }));
+              run(async () => ({ ok: true, message: msg }));
+            }
+          }}
+        />
+      ) : null}
 
       <Section title="Basics">
         <div className="grid gap-4 md:grid-cols-2">

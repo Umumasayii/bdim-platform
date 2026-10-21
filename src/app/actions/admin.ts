@@ -94,10 +94,101 @@ export async function saveCourse(course: Course): Promise<AdminResult> {
   return attempt(() => getStore().saveCourse(parsed.data as Course), [TAGS.courses]);
 }
 
-export async function deleteCourse(id: string): Promise<AdminResult> {
+export interface CourseImpact {
+  enrolled: number;
+  pending: number;
+  lessonsCompleted: number;
+  quizAttempts: number;
+  submissions: number;
+  certificates: number;
+}
+
+const noImpact: CourseImpact = { enrolled: 0, pending: 0, lessonsCompleted: 0, quizAttempts: 0, submissions: 0, certificates: 0 };
+const hasLearnerData = (i: CourseImpact) => Object.values(i).some((n) => n > 0);
+
+/** What deleting a course would remove (learners' records). */
+export async function getCourseImpact(id: string): Promise<{ ok: true; impact: CourseImpact } | { ok: false; message: string }> {
+  const denied = await guard();
+  if (denied) return { ok: false, message: denied.ok ? "" : denied.message };
+  if (!isSupabaseConfigured) return { ok: true, impact: noImpact };
+  const db = await createUserClient();
+  const count = async (table: string, extra?: (q: ReturnType<typeof base>) => ReturnType<typeof base>) => {
+    let q = base(table);
+    if (extra) q = extra(q);
+    const { count: n, error } = await q;
+    if (error) throw new Error(error.message);
+    return n ?? 0;
+  };
+  function base(table: string) {
+    return db.from(table).select("*", { count: "exact", head: true }).eq("course_id", id);
+  }
+  try {
+    const [enrolled, pending, lessonsCompleted, quizAttempts, submissions, certificates] = await Promise.all([
+      count("enrollments", (q) => q.in("status", ["active", "completed"])),
+      count("enrollments", (q) => q.eq("status", "requested")),
+      count("lesson_progress"),
+      count("quiz_submissions"),
+      count("assignment_submissions"),
+      count("certificates"),
+    ]);
+    return { ok: true, impact: { enrolled, pending, lessonsCompleted, quizAttempts, submissions, certificates } };
+  } catch (err) {
+    return { ok: false, message: (err as Error).message };
+  }
+}
+
+/**
+ * Delete a course permanently (admins only). If learners have records in it,
+ * the exact course title must be typed as confirmation.
+ */
+export async function deleteCourse(id: string, confirmTitle = ""): Promise<AdminResult> {
   const denied = await guard(true);
   if (denied) return denied;
-  return attempt(() => getStore().deleteCourse(id), [TAGS.courses], "Course deleted.");
+  const course = (await getStore().listCourses({ includeUnpublished: true })).find((c) => c.id === id);
+  if (!course) return { ok: false, message: "Course not found." };
+  const impact = await getCourseImpact(id);
+  if (!impact.ok) return { ok: false, message: impact.message };
+  if (hasLearnerData(impact.impact) && confirmTitle.trim() !== course.title.trim()) {
+    return { ok: false, message: "Type the course title exactly to confirm deleting a course that has learners." };
+  }
+  return attempt(() => getStore().deleteCourse(id), [TAGS.courses, LIBRARY_TAG], `"${course.title}" deleted.`);
+}
+
+/** Show or hide a course on the website. */
+export async function setCoursePublished(id: string, published: boolean): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  return attempt(() => getStore().updateCourseSettings(id, { published }), [TAGS.courses], published ? "Published: visible on the website." : "Hidden from the website.");
+}
+
+/** Show or hide a course in the homepage's "Featured courses" (first 6 in course order). */
+export async function setCourseFeatured(id: string, featured: boolean): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  return attempt(() => getStore().updateCourseSettings(id, { featured }), [TAGS.courses], featured ? "Added to the homepage." : "Removed from the homepage.");
+}
+
+/** Move a course one place up (-1) or down (+1) in the catalogue order. */
+export async function moveCourse(id: string, direction: -1 | 1): Promise<AdminResult> {
+  const denied = await guard();
+  if (denied) return denied;
+  return attempt(
+    async () => {
+      const store = getStore();
+      const list = await store.listCourses({ includeUnpublished: true });
+      const i = list.findIndex((c) => c.id === id);
+      const j = i + direction;
+      if (i < 0 || j < 0 || j >= list.length) return;
+      [list[i], list[j]] = [list[j], list[i]];
+      // Renumber 10, 20, 30… and save only the courses whose position changed.
+      for (const [index, c] of list.entries()) {
+        const sortOrder = (index + 1) * 10;
+        if (c.sortOrder !== sortOrder) await store.updateCourseSettings(c.id, { sortOrder });
+      }
+    },
+    [TAGS.courses],
+    "Order updated.",
+  );
 }
 
 export async function saveQuestion(question: Question): Promise<AdminResult> {

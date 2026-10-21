@@ -79,6 +79,12 @@ export const localStore: Store = {
     return db.courses.filter((c) => opts?.includeUnpublished || c.published).sort((a, b) => a.sortOrder - b.sortOrder);
   },
   saveCourse: (course) => mutate((db) => upsertById(db.courses, course)),
+  updateCourseSettings: (id, patch) =>
+    mutate((db) => {
+      const course = db.courses.find((c) => c.id === id);
+      if (!course) throw new Error("Course not found.");
+      Object.assign(course, patch);
+    }),
   deleteCourse: (id) => mutate((db) => void (db.courses = db.courses.filter((c) => c.id !== id))),
 
   async listPaths(opts) {

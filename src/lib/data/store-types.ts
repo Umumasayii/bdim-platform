@@ -10,6 +10,8 @@ import type {
   Testimonial,
 } from "@/lib/types";
 
+export type CourseSettingsPatch = Partial<Pick<Course, "published" | "featured" | "sortOrder">>;
+
 export interface ListOptions {
   /** Include unpublished / inactive records. Requires a staff session in Supabase mode. */
   includeUnpublished?: boolean;
@@ -35,6 +37,8 @@ export interface Store {
 
   listCourses(opts?: ListOptions): Promise<Course[]>;
   saveCourse(course: Course): Promise<void>;
+  /** Change only these settings of a course (quick actions in the admin list). */
+  updateCourseSettings(id: string, patch: CourseSettingsPatch): Promise<void>;
   deleteCourse(id: string): Promise<void>;
 
   listPaths(opts?: ListOptions): Promise<LearningPath[]>;
